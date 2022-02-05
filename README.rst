@@ -1,2 +1,2 @@
-Wavelet transform of xarray dataarray
-=====================================
+Discrete wavelet transform with xarray
+======================================
