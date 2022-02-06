@@ -7,6 +7,7 @@ from functools import reduce
 import numpy as np
 import xarray as xr
 import pandas as pd
+import xoa.filter as xoaf
 
 
 def _diff_coord(coord):
@@ -145,7 +146,9 @@ def wvltt(
             "Only the Morlet wavelet is implemented for now."
         )
 
-    return (da * np.conj(wavelet)).sum(dim, skipna=True) * np.prod(delta_x) / s
+    return (xoaf.convolve(da * np.conj(wavelet)).sum(dim, skipna=True)
+            * np.prod(delta_x) / s
+    )
 
 
 def wvlt_spectrum(da, s, **kwargs):
