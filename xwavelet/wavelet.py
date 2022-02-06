@@ -173,4 +173,4 @@ def wvlt_spectrum(da, s, **kwargs):
                 wtype=wtype
     )
 
-    return (dawt * np.conj(dawt))
+    return (dawt * np.conj(dawt)).real
