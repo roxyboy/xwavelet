@@ -7,6 +7,7 @@ from functools import reduce
 import numpy as np
 import xarray as xr
 import pandas as pd
+import dask.array as dsar
 import xoa.filter as xoaf
 
 
@@ -62,7 +63,7 @@ def _morlet(xo, ntheta, a, s, y, x, dim):
     arg2 = -(x**2+y**2)/2/s**2/xo**2
     m = a*np.exp(arg1)*np.exp(arg2)
 
-    return m
+    return m, th
 
 
 def dwvlt(
@@ -84,7 +85,7 @@ def dwvlt(
     da : `xarray.DataArray`
         The data to be transformed.
     s : `xarray.DataArray`
-        Scaling parameter.
+        One-dimensional array with scaling parameter.
     spacing_tol : float, optional
         Spacing tolerance. Fourier transform should not be applied to uneven grid but
         this restriction can be relaxed with this setting. Use caution.
@@ -112,6 +113,8 @@ def dwvlt(
     else:
         if isinstance(dim, str):
             dim = [dim]
+
+    sdim = s.dims[0]
 
     # the axes along which to take wavelets
     axis_num = [
@@ -152,18 +155,60 @@ def dwvlt(
         )
 
     if wtype == 'morlet':
-        wavelet = _morlet(xo, ntheta, a, s, y, x, dim)
+        wavelet, phi = _morlet(xo, ntheta, a, s, y, x, dim)
     else:
         raise NotImplementedError(
             "Only the Morlet wavelet is implemented for now."
         )
 
-    return (xoaf.convolve(da, np.conj(wavelet)).sum(dim, skipna=True)
-            * np.prod(delta_x) / s
-    )
+    axis_num = [
+        da.get_axis_num(d) for d in da.dims if d not in dim
+    ]
+    N = [da.shape[n] for n in axis_num]
+    new_dims = [
+        da[d].dims[0] for d in da.dims if d not in dim
+    ] + ['angle'] + [sdim]
+    new_coords = dict([[c for c in da.coords.items() if c[0] not in dim]])
+    new_coords['angle'] = phi
+    new_coords[sdim] = s.coords
+    dawt = xr.DataArray(
+        np.ones(N + list(ntheta) + list(len(s))),
+        dims=new_dims,
+        coords=new_coords
+    ) * np.nan
+
+    for ia in range(ntheta):
+        for js in range(len(s)):
+            dawt.isel({'angle':ia,sdim:js})[:] = (
+                    dsar.map_blocks(xoaf.convolve,
+                                    da,
+                                    np.conj(wavelet.isel({'angle':ia,sdim:js})
+                    ).sum(dim, skipna=True)
+                    * np.prod(delta_x) / s.isel({sdim:js})
+            )
+
+    return dawt
 
 
 def wvlt_spectrum(da, s, **kwargs):
+    r"""
+    Compute discrete wavelet transform of da. Default is the Morlet wavelet.
+    Scale :math:`s` is dimensionless.
+
+    Parameters
+    ----------
+    da : `xarray.DataArray`
+        The data to be transformed.
+    s : `xarray.DataArray`
+        Scaling parameter.
+    kwargs : dict
+        See xwavelet.dwvlt for argument list.
+
+    Returns
+    -------
+    ps : `xarray.DataArray`
+        The output of the wavelet spectrum, with appropriate dimensions.
+    """
 
     dawt = dwvlt(da, s,
                 dim=dim,
