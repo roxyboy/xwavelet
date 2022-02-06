@@ -158,7 +158,7 @@ def dwvlt(
             "Only the Morlet wavelet is implemented for now."
         )
 
-    return (xoaf.convolve(da * np.conj(wavelet)).sum(dim, skipna=True)
+    return (xoaf.convolve(da, np.conj(wavelet)).sum(dim, skipna=True)
             * np.prod(delta_x) / s
     )
 
