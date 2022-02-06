@@ -10,6 +10,11 @@ import pandas as pd
 import xoa.filter as xoaf
 
 
+__all__ = [
+    "dwvlt",
+]
+
+
 def _diff_coord(coord):
     """Returns the difference as a `xarray.DataArray`."""
 
