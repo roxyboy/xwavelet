@@ -32,6 +32,7 @@ def _diff_coord(coord):
     else:
         return np.diff(coord)
 
+
 def _morlet(xo, ntheta, a, s, y, x, dim):
     r"""
     Define
@@ -94,10 +95,16 @@ def dwvlt(
     xo : float
         Length scale.
     a : float
+        Amplitude of wavelet.
     ntheta : int
         Number of azimuthal angles the wavelet transform is taken over.
     wtype : str
         Type of wavelet.
+
+    Returns
+    -------
+    dawt : `xarray.DataArray`
+        The output of the wavelet transformation, with appropriate dimensions.
     """
 
     if dim is None:
