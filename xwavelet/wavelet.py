@@ -168,7 +168,7 @@ def dwvlt(
     new_dims = [
         da[d].dims[0] for d in da.dims if d not in dim
     ] + ['angle'] + [sdim]
-    new_coords = dict([[c for c in da.coords.items() if c[0] not in dim]])
+    new_coords = dict([c for c in da.coords.items() if c[0] not in dim])
     new_coords['angle'] = phi
     new_coords[sdim] = s.coords
     dawt = xr.DataArray(
