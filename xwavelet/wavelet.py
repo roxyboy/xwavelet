@@ -172,7 +172,7 @@ def dwvlt(
     new_coords['angle'] = phi
     new_coords[sdim] = s.coords
     dawt = xr.DataArray(
-        np.ones(N + list(ntheta) + list(len(s))),
+        np.ones(N + [ntheta] + [len(s)]),
         dims=new_dims,
         coords=new_coords
     ) * np.nan
