@@ -172,12 +172,12 @@ def dwvlt(
     new_coords['angle'] = phi
     new_coords[sdim] = s.coords
     dawt = xr.DataArray(
-        np.ones(N + [ntheta] + [len(s)]),
+        np.ones(N + [len(phi)] + [len(s)]),
         dims=new_dims,
         coords=new_coords
     ) * np.nan
 
-    for ia in range(ntheta):
+    for ia in range(len(phi)):
         for js in range(len(s)):
             dawt.isel({'angle':ia,sdim:js})[:] = (
                     dsar.map_blocks(xoaf.convolve,
