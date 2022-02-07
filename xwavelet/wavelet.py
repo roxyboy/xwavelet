@@ -180,9 +180,9 @@ def dwvlt(
     for ia in range(len(phi)):
         for js in range(len(s)):
             dawt.isel({'angle':ia,sdim:js})[:] = (
-                    dsar.map_blocks(xoaf.convolve,
-                                    da,
-                                    np.conj(wavelet.isel({'angle':ia,sdim:js}))
+                    xoaf.convolve(
+                              da,
+                              np.conj(wavelet.isel({'angle':ia,sdim:js}))
                     ).sum(dim, skipna=True)
                     * np.prod(delta_x) / s.isel({sdim:js})
             )
