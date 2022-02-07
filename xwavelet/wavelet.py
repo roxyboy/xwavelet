@@ -144,13 +144,6 @@ def dwvlt(
     if len(dim) == 2:
         y = da[da.dims[axis_num[-2]]] - N[-2]/2.*delta_x[-2]
         x = da[da.dims[axis_num[-1]]] - N[-1]/2.*delta_x[-1]
-        # x = xr.DataArray((np.arange(N[1]+1) - N[1]/2)*delta_x[1],
-        #                  dims=dim[1], coords={dim[1]:da[dim[1]]})
-        # y = xr.DataArray((np.arange(N[0]+1) - N[0]/2)*delta_x[0],
-        #                  dims=dim[0], coords={dim[1]:da[dim[0]]})
-        # Lx = N[1]*dx
-        # Ly = N[0]*dy
-        # pass
     else:
         raise NotImplementedError(
             "Only two-dimensional transforms are implemented for now."
@@ -167,33 +160,9 @@ def dwvlt(
             "Only the Morlet wavelet is implemented for now."
         )
 
-    axis_num = [
-        da.get_axis_num(d) for d in da.dims if d not in dim
-    ]
-    N = [da.shape[n] for n in axis_num]
-    new_dims = [
-        da[d].dims[0] for d in da.dims if d not in dim
-    ] + ['angle'] + [sdim]
-    new_coords = dict([c for c in da.coords.items() if c[0] not in dim])
-    new_coords['angle'] = phi
-    new_coords[sdim] = s
-    dawt = xr.DataArray(
-        np.ones(N + [len(phi)] + [len(s)],
-                dtype=np.complex128
-               ),
-        dims=new_dims,
-        coords=new_coords
-    ) * np.nan
-
-    for ia in range(len(phi)):
-        for js in range(len(s)):
-            dawt.isel({'angle':ia,sdim:js})[:] = (
-                    xoaf.convolve(
-                              da.astype(np.complex128),
-                              np.conj(wavelet.isel({'angle':ia,sdim:js}))
-                    ).sum(dim, skipna=True)
-                    * np.prod(delta_x) / s.isel({sdim:js})
-            )
+    dawt = ((da * np.conj(wavelet)).sum(dim, skipna=True)
+            * np.prod(delta_x) / s
+    )
 
     return dawt
 
