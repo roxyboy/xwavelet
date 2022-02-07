@@ -128,7 +128,7 @@ def test_isotropic_ps_slope(chunk, N=512, dL=1.0, amp=1e1, slope=-3.0, xo=5):
 
     if chunk:
         theta = theta.chunk({"d0": 2})
-    
+
     s = xr.DataArray(np.arange(.5,10.5,.5), dims=['scale'],
                      coords={'scale':np.arange(.5,10.5,.5)}
                     )
@@ -139,5 +139,3 @@ def test_isotropic_ps_slope(chunk, N=512, dL=1.0, amp=1e1, slope=-3.0, xo=5):
     npt.assert_almost_equal(np.ma.masked_invalid(iso_ps).mask.sum(), 0.0)
     y_fit, a, b = xrft.fit_loglog(iso_ps.scale.values[4:]**-1, iso_ps.values[4:])
     npt.assert_allclose(a, slope, atol=0.1)
-
-
