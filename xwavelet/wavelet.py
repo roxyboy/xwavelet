@@ -173,8 +173,8 @@ def dwvlt(
     new_coords[sdim] = s
     dawt = xr.DataArray(
         np.ones(N + [len(phi)] + [len(s)],
-            dtype=np.complex128
-        ),
+                dtype=np.complex128
+               ),
         dims=new_dims,
         coords=new_coords
     ) * np.nan
@@ -183,7 +183,7 @@ def dwvlt(
         for js in range(len(s)):
             dawt.isel({'angle':ia,sdim:js})[:] = (
                     xoaf.convolve(
-                              da,
+                              da.astype(np.complex128),
                               np.conj(wavelet.isel({'angle':ia,sdim:js}))
                     ).sum(dim, skipna=True)
                     * np.prod(delta_x) / s.isel({sdim:js})
