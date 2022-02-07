@@ -142,8 +142,8 @@ def dwvlt(
 
     # grid parameters
     if len(dim) == 2:
-        x = da[dim[-2]] - N[-2]/2*delta_x[-2]
-        y = da[dim[-1]] - N[-1]/2*delta_x[-1]
+        y = da[da.dims[axis_num[-2]]] - N[-2]/2.*delta_x[-2]
+        x = da[da.dims[axis_num[-1]]] - N[-1]/2.*delta_x[-1]
         # x = xr.DataArray((np.arange(N[1]+1) - N[1]/2)*delta_x[1],
         #                  dims=dim[1], coords={dim[1]:da[dim[1]]})
         # y = xr.DataArray((np.arange(N[0]+1) - N[0]/2)*delta_x[0],
@@ -155,6 +155,10 @@ def dwvlt(
         raise NotImplementedError(
             "Only two-dimensional transforms are implemented for now."
         )
+
+    da = da.drop_vars(dim)
+    da[da.dims[axis_num[-2]]] = (da.dims[axis_num[-2]],y.data)
+    da[da.dims[axis_num[-1]]] = (da.dims[axis_num[-1]],x.data)
 
     if wtype == 'morlet':
         wavelet, phi = _morlet(xo, ntheta, a, s, y, x, dim)
