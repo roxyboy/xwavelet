@@ -59,7 +59,7 @@ def _morlet(xo, ntheta, a, s, y, x, dim):
     yp = np.sin(th)*s**-1*y
     xp = np.cos(th)*s**-1*x
 
-    arg1 = -2.*np.pi*1j*ko*(xp-yp)
+    arg1 = -2j*np.pi*ko*(xp-yp)
     arg2 = -(x**2+y**2)/2/s**2/xo**2
     m = a*np.exp(arg1)*np.exp(arg2)
 
