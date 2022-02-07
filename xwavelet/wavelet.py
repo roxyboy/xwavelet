@@ -142,10 +142,12 @@ def dwvlt(
 
     # grid parameters
     if len(dim) == 2:
-        x = xr.DataArray((np.arange(1,N[1]+1) - N[1]/2)*delta_x[1],
-                         dims=dim[1], coords={dim[1]:da[dim[1]]})
-        y = xr.DataArray((np.arange(1,N[0]+1) - N[0]/2)*delta_x[0],
-                         dims=dim[0], coords={dim[1]:da[dim[0]]})
+        x = da[dim[-2]] - N[-2]/2*delta_x[-2]
+        y = da[dim[-1]] - N[-1]/2*delta_x[-1]
+        # x = xr.DataArray((np.arange(N[1]+1) - N[1]/2)*delta_x[1],
+        #                  dims=dim[1], coords={dim[1]:da[dim[1]]})
+        # y = xr.DataArray((np.arange(N[0]+1) - N[0]/2)*delta_x[0],
+        #                  dims=dim[0], coords={dim[1]:da[dim[0]]})
         # Lx = N[1]*dx
         # Ly = N[0]*dy
         pass
