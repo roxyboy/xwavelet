@@ -185,3 +185,41 @@ def wvlt_power_spectrum(da, s, dim, **kwargs):
     C = (np.abs(Fw) ** 2 / k2 * np.prod(dk)).sum(Fdims, skipna=True)
 
     return np.abs(dawt) * (xo * dawt[s.dims[0]]) ** -1 * C ** -2
+
+
+def wvlt_cross_spectrum(da, da1, s, dim, **kwargs):
+    r"""
+    Compute discrete wavelet transform of da. Default is the Morlet wavelet.
+    Scale :math:`s` is dimensionless.
+
+    Parameters
+    ----------
+    da : `xarray.DataArray`
+        The data to be transformed.
+    s : `xarray.DataArray`
+        Scaling parameter.
+    kwargs : dict
+        See xwavelet.dwvlt for argument list.
+
+    Returns
+    -------
+    ps : `xarray.DataArray`
+        The output of the wavelet spectrum, with appropriate dimensions.
+    """
+
+    dawt, wavelet = dwvlt(da, s, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype)
+    dawt1, _ = dwvlt(da1, s, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype)
+
+    Fw = xrft.fft(wavelet, dim=dim, true_phase=True, true_amplitude=True)
+
+    Fdims = []
+    for d in dim:
+        Fdims.append("freq_" + d)
+
+    k2 = xr.zeros_like(Fw)
+    for d in Fdims:
+        k2 = k2 + Fw[d] ** 2
+    dk = [np.diff(Fw[d])[0] for d in Fdims]
+    C = (np.abs(Fw) ** 2 / k2 * np.prod(dk)).sum(Fdims, skipna=True)
+
+    return (dawt * np.conj(dawt1)) * (xo * dawt[s.dims[0]]) ** -1 * C ** -2
