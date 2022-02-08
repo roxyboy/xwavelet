@@ -188,7 +188,7 @@ def wvlt_power_spectrum(da, s, dim, **kwargs):
     dk = [np.diff(Fw[d]).data[0] for d in Fdims]
     C = (np.abs(Fw) ** 2 / k2 * np.prod(dk)).sum(Fdims, skipna=True)
 
-    return np.abs(dawt) * (xo * dawt[s.dims[0]]) ** -1 * C ** -2
+    return np.abs(dawt)**2 * (xo * dawt[s.dims[0]]) ** -1 * C ** -2
 
 
 def wvlt_cross_spectrum(da, da1, s, dim, **kwargs):
