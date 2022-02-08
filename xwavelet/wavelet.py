@@ -97,6 +97,8 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
     -------
     dawt : `xarray.DataArray`
         The output of the wavelet transformation, with appropriate dimensions.
+    wavelet : `xarray.DataArray`
+        The wavelet with appropriate dimensions.
     """
 
     if dim is None:
@@ -145,7 +147,7 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
 
     dawt = (da * np.conj(wavelet)).sum(dim, skipna=True) * np.prod(delta_x) / s
 
-    return dawt
+    return dawt, wavelet
 
 
 def wvlt_spectrum(da, s, **kwargs):
@@ -168,6 +170,6 @@ def wvlt_spectrum(da, s, **kwargs):
         The output of the wavelet spectrum, with appropriate dimensions.
     """
 
-    dawt = dwvlt(da, s, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype)
+    dawt, wavelet = dwvlt(da, s, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype)
 
-    return (dawt * np.conj(dawt)).real * (xo * dawt.scale) ** -1
+    return (dawt * np.conj(dawt)).real * (xo * dawt[s.dims[0]]) ** -1

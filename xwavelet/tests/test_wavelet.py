@@ -140,4 +140,4 @@ def test_isotropic_ps_slope(chunk, N=512, dL=1.0, amp=1e0, slope=-3.0, xo=5):
     ) ** -1
     npt.assert_almost_equal(np.ma.masked_invalid(iso_ps).mask.sum(), 0.0)
     y_fit, a, b = xrft.fit_loglog((xo * iso_ps.scale.values[:]) ** -1, iso_ps.values[:])
-    npt.assert_allclose(a, slope, atol=0.1)
+    npt.assert_allclose(a, slope, atol=0.2)
