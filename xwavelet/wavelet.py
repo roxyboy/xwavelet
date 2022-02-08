@@ -158,7 +158,7 @@ def wvlt_power_spectrum(da, s, dim, **kwargs):
     Parameters
     ----------
     da : `xarray.DataArray`
-        The data to be transformed.
+        The data to have the spectral estimate.
     s : `xarray.DataArray`
         Scaling parameter.
     dim : str or sequence of str, optional
@@ -199,7 +199,9 @@ def wvlt_cross_spectrum(da, da1, s, dim, **kwargs):
     Parameters
     ----------
     da : `xarray.DataArray`
-        The data to be transformed.
+        The data to have the cross spectral estimate.
+    da : `xarray.DataArray`
+        The data to have the cross spectral estimate.
     s : `xarray.DataArray`
         Scaling parameter.
     dim : str or sequence of str, optional
