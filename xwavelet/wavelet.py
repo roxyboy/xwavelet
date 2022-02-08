@@ -149,10 +149,6 @@ def dwvlt(
             "Only two-dimensional transforms are implemented for now."
         )
 
-    da = da.drop_vars(dim)
-    da[da.dims[axis_num[-2]]] = (da.dims[axis_num[-2]],y.data)
-    da[da.dims[axis_num[-1]]] = (da.dims[axis_num[-1]],x.data)
-
     if wtype == 'morlet':
         wavelet, phi = _morlet(xo, ntheta, a, s, y, x, dim)
     else:
