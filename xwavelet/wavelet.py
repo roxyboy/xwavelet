@@ -170,4 +170,4 @@ def wvlt_spectrum(da, s, **kwargs):
 
     dawt = dwvlt(da, s, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype)
 
-    return (dawt * np.conj(dawt)).real
+    return (dawt * np.conj(dawt)).real * (xo * dawt.scale) ** -1
