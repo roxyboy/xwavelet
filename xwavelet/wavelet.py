@@ -150,7 +150,7 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
     return dawt, wavelet
 
 
-def wvlt_spectrum(da, s, dim, **kwargs):
+def wvlt_power_spectrum(da, s, dim, **kwargs):
     r"""
     Compute discrete wavelet transform of da. Default is the Morlet wavelet.
     Scale :math:`s` is dimensionless.
@@ -172,4 +172,16 @@ def wvlt_spectrum(da, s, dim, **kwargs):
 
     dawt, wavelet = dwvlt(da, s, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype)
 
-    return (dawt * np.conj(dawt)).real * (xo * dawt[s.dims[0]]) ** -1
+    Fw = xrft.fft(wavelet, dim=dim, true_phase=True, true_amplitude=True)
+
+    Fdims = []
+    for d in dim:
+        Fdims.append("freq_" + d)
+
+    k2 = xr.zeros_like(Fw)
+    for d in Fdims:
+        k2 = k2 + Fw[d] ** 2
+    dk = [np.diff(Fw[d])[0] for d in Fdims]
+    C = (np.abs(Fw) ** 2 / k2 * np.prod(dk)).sum(Fdims, skipna=True)
+
+    return np.abs(dawt) * (xo * dawt[s.dims[0]]) ** -1 * C ** -2
