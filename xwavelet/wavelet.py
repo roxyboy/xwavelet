@@ -49,33 +49,24 @@ def _morlet(xo, ntheta, a, s, y, x, dim):
     Units of :math:`a` are :math:`L^{-2}`.
     :math:`k_0` is defaulted to :math:`1/x_0` in the zonal direction.
     """
-    ko = 1./xo
+    ko = 1.0 / xo
 
     # compute morlet wavelet
-    th = np.arange(int(ntheta/2))*2.*np.pi/ntheta
-    th = xr.DataArray(th, dims=['angle'], coords={'angle':th})
+    th = np.arange(int(ntheta / 2)) * 2.0 * np.pi / ntheta
+    th = xr.DataArray(th, dims=["angle"], coords={"angle": th})
 
     # rotated positions
-    yp = np.sin(th)*s**-1*y
-    xp = np.cos(th)*s**-1*x
+    yp = np.sin(th) * s ** -1 * y
+    xp = np.cos(th) * s ** -1 * x
 
-    arg1 = 2j*np.pi*ko*(yp-xp)
-    arg2 = -(x**2+y**2)/2/s**2/xo**2
-    m = a*np.exp(arg1)*np.exp(arg2)
+    arg1 = 2j * np.pi * ko * (yp - xp)
+    arg2 = -(x ** 2 + y ** 2) / 2 / s ** 2 / xo ** 2
+    m = a * np.exp(arg1) * np.exp(arg2)
 
     return m, th
 
 
-def dwvlt(
-    da,
-    s,
-    spacing_tol=1e-3,
-    dim=None,
-    xo=50e3,
-    a=1.,
-    ntheta=16,
-    wtype="morlet"
-):
+def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="morlet"):
     r"""
     Compute discrete wavelet transform of da. Default is the Morlet wavelet.
     Scale :math:`s` is dimensionless.
@@ -106,6 +97,8 @@ def dwvlt(
     -------
     dawt : `xarray.DataArray`
         The output of the wavelet transformation, with appropriate dimensions.
+    wavelet : `xarray.DataArray`
+        The wavelet with appropriate dimensions.
     """
 
     if dim is None:
@@ -117,9 +110,7 @@ def dwvlt(
     sdim = s.dims[0]
 
     # the axes along which to take wavelets
-    axis_num = [
-        da.get_axis_num(d) for d in dim
-    ]
+    axis_num = [da.get_axis_num(d) for d in dim]
 
     N = [da.shape[n] for n in axis_num]
 
@@ -142,28 +133,24 @@ def dwvlt(
 
     # grid parameters
     if len(dim) == 2:
-        y = da[da.dims[axis_num[-2]]] - N[-2]/2.*delta_x[-2]
-        x = da[da.dims[axis_num[-1]]] - N[-1]/2.*delta_x[-1]
+        y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
+        x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
     else:
         raise NotImplementedError(
             "Only two-dimensional transforms are implemented for now."
         )
 
-    if wtype == 'morlet':
+    if wtype == "morlet":
         wavelet, phi = _morlet(xo, ntheta, a, s, y, x, dim)
     else:
-        raise NotImplementedError(
-            "Only the Morlet wavelet is implemented for now."
-        )
+        raise NotImplementedError("Only the Morlet wavelet is implemented for now.")
 
-    dawt = ((da * np.conj(wavelet)).sum(dim, skipna=True)
-            * np.prod(delta_x) / s
-    )
+    dawt = (da * np.conj(wavelet)).sum(dim, skipna=True) * np.prod(delta_x) / s
 
-    return dawt
+    return dawt, wavelet
 
 
-def wvlt_spectrum(da, s, **kwargs):
+def wvlt_spectrum(da, s, dim, **kwargs):
     r"""
     Compute discrete wavelet transform of da. Default is the Morlet wavelet.
     Scale :math:`s` is dimensionless.
@@ -183,12 +170,6 @@ def wvlt_spectrum(da, s, **kwargs):
         The output of the wavelet spectrum, with appropriate dimensions.
     """
 
-    dawt = dwvlt(da, s,
-                dim=dim,
-                xo=xo,
-                a=a,
-                ntheta=ntheta,
-                wtype=wtype
-    )
+    dawt, wavelet = dwvlt(da, s, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype)
 
-    return (dawt * np.conj(dawt)).real
+    return (dawt * np.conj(dawt)).real * (xo * dawt[s.dims[0]]) ** -1
