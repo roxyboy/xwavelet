@@ -1,4 +1,4 @@
-name: test_env_xrft
+name: test_env_xwavelet
 channels:
   - conda-forge
   - defaults
@@ -14,6 +14,8 @@ dependencies:
   - black
   - cftime
   - setuptools
+  - xrft
+  - xoa
   - pip:
     - codecov
     - pytest-xdist
