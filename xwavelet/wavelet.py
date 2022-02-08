@@ -150,7 +150,7 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
     return dawt, wavelet
 
 
-def wvlt_spectrum(da, s, **kwargs):
+def wvlt_spectrum(da, s, dim, **kwargs):
     r"""
     Compute discrete wavelet transform of da. Default is the Morlet wavelet.
     Scale :math:`s` is dimensionless.
