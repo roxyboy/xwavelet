@@ -9,7 +9,6 @@ dependencies:
   - numpy
   - numpy_groupies
   - pytest
-  - pytest-cov
   - pip
   - black
   - cftime
@@ -18,6 +17,7 @@ dependencies:
   - xoa
   - pip:
     - codecov
+    - pytest-cov
     - pytest-xdist
     - setuptools-scm
     - toml
