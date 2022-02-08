@@ -135,7 +135,7 @@ def test_isotropic_ps_slope(chunk, N=512, dL=1.0, amp=1e1, slope=-3.0, xo=5):
     Wtheta = xwavelet.dwvlt(
         theta, s, dim=["y", "x"], xo=xo, ntheta=6
     )
-    iso_ps = (Wtheta * np.conj(Wtheta)).mean(['d0','angle'])
+    iso_ps = (Wtheta * np.conj(Wtheta)).real.mean(['d0','angle'])
     npt.assert_almost_equal(np.ma.masked_invalid(iso_ps).mask.sum(), 0.0)
     y_fit, a, b = xrft.fit_loglog(iso_ps.scale.values[4:]**-1, iso_ps.values[4:])
     npt.assert_allclose(a, slope, atol=0.1)
