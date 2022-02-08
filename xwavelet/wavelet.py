@@ -161,6 +161,10 @@ def wvlt_power_spectrum(da, s, dim, **kwargs):
         The data to be transformed.
     s : `xarray.DataArray`
         Scaling parameter.
+    dim : str or sequence of str, optional
+        The dimensions along which to take the transformation. If `None`, all
+        dimensions will be transformed. If the inputs are dask arrays, the
+        arrays must not be chunked along these dimensions.
     kwargs : dict
         See xwavelet.dwvlt for argument list.
 
@@ -198,6 +202,10 @@ def wvlt_cross_spectrum(da, da1, s, dim, **kwargs):
         The data to be transformed.
     s : `xarray.DataArray`
         Scaling parameter.
+    dim : str or sequence of str, optional
+        The dimensions along which to take the transformation. If `None`, all
+        dimensions will be transformed. If the inputs are dask arrays, the
+        arrays must not be chunked along these dimensions.
     kwargs : dict
         See xwavelet.dwvlt for argument list.
 
