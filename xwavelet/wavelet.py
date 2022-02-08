@@ -59,7 +59,7 @@ def _morlet(xo, ntheta, a, s, y, x, dim):
     yp = np.sin(th)*s**-1*y
     xp = np.cos(th)*s**-1*x
 
-    arg1 = -2j*np.pi*ko*(xp-yp)
+    arg1 = 2j*np.pi*ko*(yp-xp)
     arg2 = -(x**2+y**2)/2/s**2/xo**2
     m = a*np.exp(arg1)*np.exp(arg2)
 
@@ -148,10 +148,6 @@ def dwvlt(
         raise NotImplementedError(
             "Only two-dimensional transforms are implemented for now."
         )
-
-    da = da.drop_vars(dim)
-    da[da.dims[axis_num[-2]]] = (da.dims[axis_num[-2]],y.data)
-    da[da.dims[axis_num[-1]]] = (da.dims[axis_num[-1]],x.data)
 
     if wtype == 'morlet':
         wavelet, phi = _morlet(xo, ntheta, a, s, y, x, dim)
