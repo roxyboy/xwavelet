@@ -7,8 +7,7 @@ from functools import reduce
 import numpy as np
 import xarray as xr
 import pandas as pd
-import dask.array as dsar
-import xoa.filter as xoaf
+import xrft
 
 
 __all__ = [
