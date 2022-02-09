@@ -227,7 +227,7 @@ def wvlt_power_spectrum(
             true_amplitude=True,
         )
 
-        k2 = xr.zeros_like(Fw)
+        k2 = xr.zeros_like(Fw.real)
         for d in Fdims:
             k2 = k2 + Fw[d] ** 2
         dk = [np.diff(Fw[d]).data[0] for d in Fdims]
@@ -313,7 +313,7 @@ def wvlt_cross_spectrum(
             true_amplitude=True,
         )
 
-        k2 = xr.zeros_like(Fw)
+        k2 = xr.zeros_like(Fw.real)
         for d in Fdims:
             k2 = k2 + Fw[d] ** 2
         dk = [np.diff(Fw[d]).data[0] for d in Fdims]
