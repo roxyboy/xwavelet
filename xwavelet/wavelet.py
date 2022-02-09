@@ -13,6 +13,8 @@ import xoa.filter as xoaf
 
 __all__ = [
     "dwvlt",
+    "wvlt_power_spectrum",
+    "wvlt_cross_spectrum",
 ]
 
 
@@ -32,6 +34,28 @@ def _diff_coord(coord):
         return np.diff(coord).astype("timedelta64[s]").astype("f8")
     else:
         return np.diff(coord)
+
+
+def _delta(da, dim, spacing_tol):
+    """Returns the grid spacing"""
+
+    delta_x = []
+    for d in dim:
+        diff = _diff_coord(da[d])
+        delta = np.abs(diff[0])
+        if not np.allclose(diff, diff[0], rtol=spacing_tol):
+            raise ValueError(
+                "Can't take wavelet transform because "
+                "coodinate %s is not evenly spaced" % d
+            )
+        if delta == 0.0:
+            raise ValueError(
+                "Can't take wavelet transform because spacing in coordinate %s is zero"
+                % d
+            )
+        delta_x.append(delta)
+
+    return delta_x
 
 
 def _morlet(xo, ntheta, a, s, y, x, dim):
@@ -115,21 +139,7 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
     N = [da.shape[n] for n in axis_num]
 
     # verify even spacing of input coordinates
-    delta_x = []
-    for d in dim:
-        diff = _diff_coord(da[d])
-        delta = np.abs(diff[0])
-        if not np.allclose(diff, diff[0], rtol=spacing_tol):
-            raise ValueError(
-                "Can't take wavelet transform because "
-                "coodinate %s is not evenly spaced" % d
-            )
-        if delta == 0.0:
-            raise ValueError(
-                "Can't take wavelet transform because spacing in coordinate %s is zero"
-                % d
-            )
-        delta_x.append(delta)
+    delta_x = _delta(da, dim, spacing_tol)
 
     # grid parameters
     if len(dim) == 2:
@@ -147,10 +157,20 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
 
     dawt = (da * np.conj(wavelet)).sum(dim, skipna=True) * np.prod(delta_x) / s
 
-    return dawt, wavelet
+    return dawt
 
 
-def wvlt_spectrum(da, s, dim, **kwargs):
+def wvlt_power_spectrum(
+    da,
+    s,
+    spacing_tol=1e-3,
+    dim=None,
+    xo=50e3,
+    a=1.0,
+    ntheta=16,
+    wtype="morlet",
+    normalize=True,
+):
     r"""
     Compute discrete wavelet transform of da. Default is the Morlet wavelet.
     Scale :math:`s` is dimensionless.
@@ -158,9 +178,13 @@ def wvlt_spectrum(da, s, dim, **kwargs):
     Parameters
     ----------
     da : `xarray.DataArray`
-        The data to be transformed.
+        The data to have the spectral estimate.
     s : `xarray.DataArray`
         Scaling parameter.
+    dim : str or sequence of str, optional
+        The dimensions along which to take the transformation. If `None`, all
+        dimensions will be transformed. If the inputs are dask arrays, the
+        arrays must not be chunked along these dimensions.
     kwargs : dict
         See xwavelet.dwvlt for argument list.
 
@@ -170,6 +194,133 @@ def wvlt_spectrum(da, s, dim, **kwargs):
         The output of the wavelet spectrum, with appropriate dimensions.
     """
 
-    dawt, wavelet = dwvlt(da, s, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype)
+    if dim is None:
+        dim = list(da.dims)
+    else:
+        if isinstance(dim, str):
+            dim = [dim]
 
-    return (dawt * np.conj(dawt)).real * (xo * dawt[s.dims[0]]) ** -1
+    dawt = dwvlt(
+        da, s, spacing_tol=spacing_tol, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype
+    )
+
+    if normalize:
+
+        axis_num = [da.get_axis_num(d) for d in dim]
+        N = [da.shape[n] for n in axis_num]
+        delta_x = _delta(da, dim, spacing_tol)
+
+        if wtype == "morlet":
+            y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
+            x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
+            wavelet, phi = _morlet(xo, ntheta, a, 1.0, y, x, dim)
+
+        Fdims = []
+        chunks = dict()
+        for d in dim:
+            chunks[d] = -1
+            Fdims.append("freq_" + d)
+
+        Fw = xrft.fft(
+            wavelet.isel(angle=0).chunk(chunks),
+            dim=dim,
+            true_phase=True,
+            true_amplitude=True,
+        )
+
+        k2 = xr.zeros_like(Fw)
+        for d in Fdims:
+            k2 = k2 + Fw[d] ** 2
+        dk = [np.diff(Fw[d]).data[0] for d in Fdims]
+        C = (np.abs(Fw) ** 2 / k2 * np.prod(dk)).sum(Fdims, skipna=True)
+
+    else:
+        C = 1.0
+
+    return np.abs(dawt) ** 2 * (xo * dawt[s.dims[0]]) ** -1 * C ** -2
+
+
+def wvlt_cross_spectrum(
+    da,
+    da1,
+    s,
+    spacing_tol=1e-3,
+    dim=None,
+    xo=50e3,
+    a=1.0,
+    ntheta=16,
+    wtype="morlet",
+    normalize=True,
+):
+    r"""
+    Compute discrete wavelet transform of da. Default is the Morlet wavelet.
+    Scale :math:`s` is dimensionless.
+
+    Parameters
+    ----------
+    da : `xarray.DataArray`
+        The data to have the cross spectral estimate.
+    da : `xarray.DataArray`
+        The data to have the cross spectral estimate.
+    s : `xarray.DataArray`
+        Scaling parameter.
+    dim : str or sequence of str, optional
+        The dimensions along which to take the transformation. If `None`, all
+        dimensions will be transformed. If the inputs are dask arrays, the
+        arrays must not be chunked along these dimensions.
+    kwargs : dict
+        See xwavelet.dwvlt for argument list.
+
+    Returns
+    -------
+    ps : `xarray.DataArray`
+        The output of the wavelet spectrum, with appropriate dimensions.
+    """
+
+    if dim is None:
+        dim = list(da.dims)
+    else:
+        if isinstance(dim, str):
+            dim = [dim]
+
+    dawt = dwvlt(
+        da, s, spacing_tol=spacing_tol, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype
+    )
+    dawt1 = dwvlt(
+        da, s, spacing_tol=spacing_tol, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype
+    )
+
+    if normalize:
+
+        axis_num = [da.get_axis_num(d) for d in dim]
+        N = [da.shape[n] for n in axis_num]
+        delta_x = _delta(da, dim, spacing_tol)
+
+        if wtype == "morlet":
+            y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
+            x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
+            wavelet, phi = _morlet(xo, ntheta, a, 1.0, y, x, dim)
+
+        Fdims = []
+        chunks = dict()
+        for d in dim:
+            chunks[d] = -1
+            Fdims.append("freq_" + d)
+
+        Fw = xrft.fft(
+            wavelet.isel(angle=0).chunk(chunks),
+            dim=dim,
+            true_phase=True,
+            true_amplitude=True,
+        )
+
+        k2 = xr.zeros_like(Fw)
+        for d in Fdims:
+            k2 = k2 + Fw[d] ** 2
+        dk = [np.diff(Fw[d]).data[0] for d in Fdims]
+        C = (np.abs(Fw) ** 2 / k2 * np.prod(dk)).sum(Fdims, skipna=True)
+
+    else:
+        C = 1.0
+
+    return (dawt * np.conj(dawt1)).real * (xo * dawt[s.dims[0]]) ** -1 * C ** -2

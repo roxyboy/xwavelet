@@ -62,3 +62,6 @@ target/
 # Pyre type checker
 .pyre/
 _version.py
+
+# Matlab
+Matlab/

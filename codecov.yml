@@ -17,7 +17,7 @@ coverage:
     
 ignore:
   - "setup.py"
-  - "setup.cfg"
   - "pyproject.toml"
   - "xwavelet/test/*"
   - "xwavelet/__init__.py"
+  - "xwavelet/_version.py"
