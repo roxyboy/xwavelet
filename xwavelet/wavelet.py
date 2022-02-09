@@ -155,6 +155,8 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
         raise NotImplementedError("Only the Morlet wavelet is implemented for now.")
 
     dawt = (da * np.conj(wavelet)).sum(dim, skipna=True) * np.prod(delta_x) / s
+    dawt = dawt.drop_vars(sdim)
+    dawt[sdim] = xo*s
 
     return dawt
 
@@ -171,7 +173,7 @@ def wvlt_power_spectrum(
     normalize=True,
 ):
     r"""
-    Compute discrete wavelet transform of da. Default is the Morlet wavelet.
+    Compute discrete wavelet power spectrum of :math:`da`.
     Scale :math:`s` is dimensionless.
 
     Parameters
@@ -180,12 +182,21 @@ def wvlt_power_spectrum(
         The data to have the spectral estimate.
     s : `xarray.DataArray`
         Scaling parameter.
+    spacing_tol : float, optional
+        Spacing tolerance. Fourier transform should not be applied to uneven grid but
+        this restriction can be relaxed with this setting. Use caution.
     dim : str or sequence of str, optional
         The dimensions along which to take the transformation. If `None`, all
         dimensions will be transformed. If the inputs are dask arrays, the
         arrays must not be chunked along these dimensions.
-    kwargs : dict
-        See xwavelet.dwvlt for argument list.
+    xo : float
+        Length scale.
+    a : float
+        Amplitude of wavelet.
+    ntheta : int
+        Number of azimuthal angles the wavelet transform is taken over.
+    wtype : str
+        Type of wavelet.
 
     Returns
     -------
@@ -209,9 +220,10 @@ def wvlt_power_spectrum(
         N = [da.shape[n] for n in axis_num]
         delta_x = _delta(da, dim, spacing_tol)
 
+        y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
+        x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
         if wtype == "morlet":
-            y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
-            x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
+            # mother wavelet
             wavelet, phi = _morlet(xo, ntheta, a, 1.0, y, x, dim)
 
         Fdims = []
@@ -236,7 +248,7 @@ def wvlt_power_spectrum(
     else:
         C = 1.0
 
-    return np.abs(dawt) ** 2 * (xo * dawt[s.dims[0]]) ** -1 * C ** -2
+    return np.abs(dawt) ** 2 * (dawt[s.dims[0]]) ** -1 * C ** -2
 
 
 def wvlt_cross_spectrum(
@@ -252,27 +264,36 @@ def wvlt_cross_spectrum(
     normalize=True,
 ):
     r"""
-    Compute discrete wavelet transform of da. Default is the Morlet wavelet.
+    Compute discrete wavelet cross spectrum of :math:`da` and :math:`da1`.
     Scale :math:`s` is dimensionless.
 
     Parameters
     ----------
     da : `xarray.DataArray`
         The data to have the cross spectral estimate.
-    da : `xarray.DataArray`
+    da1 : `xarray.DataArray`
         The data to have the cross spectral estimate.
     s : `xarray.DataArray`
         Scaling parameter.
+    spacing_tol : float, optional
+        Spacing tolerance. Fourier transform should not be applied to uneven grid but
+        this restriction can be relaxed with this setting. Use caution.
     dim : str or sequence of str, optional
         The dimensions along which to take the transformation. If `None`, all
         dimensions will be transformed. If the inputs are dask arrays, the
         arrays must not be chunked along these dimensions.
-    kwargs : dict
-        See xwavelet.dwvlt for argument list.
+    xo : float
+        Length scale.
+    a : float
+        Amplitude of wavelet.
+    ntheta : int
+        Number of azimuthal angles the wavelet transform is taken over.
+    wtype : str
+        Type of wavelet.
 
     Returns
     -------
-    ps : `xarray.DataArray`
+    cs : `xarray.DataArray`
         The output of the wavelet spectrum, with appropriate dimensions.
     """
 
@@ -286,7 +307,7 @@ def wvlt_cross_spectrum(
         da, s, spacing_tol=spacing_tol, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype
     )
     dawt1 = dwvlt(
-        da, s, spacing_tol=spacing_tol, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype
+        da1, s, spacing_tol=spacing_tol, dim=dim, xo=xo, a=a, ntheta=ntheta, wtype=wtype
     )
 
     if normalize:
@@ -295,9 +316,10 @@ def wvlt_cross_spectrum(
         N = [da.shape[n] for n in axis_num]
         delta_x = _delta(da, dim, spacing_tol)
 
+        y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
+        x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
         if wtype == "morlet":
-            y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
-            x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
+            # mother wavelet
             wavelet, phi = _morlet(xo, ntheta, a, 1.0, y, x, dim)
 
         Fdims = []
@@ -322,4 +344,4 @@ def wvlt_cross_spectrum(
     else:
         C = 1.0
 
-    return (dawt * np.conj(dawt1)).real * (xo * dawt[s.dims[0]]) ** -1 * C ** -2
+    return (dawt * np.conj(dawt1)).real * (dawt[s.dims[0]]) ** -1 * C ** -2
