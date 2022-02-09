@@ -156,7 +156,7 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
 
     dawt = (da * np.conj(wavelet)).sum(dim, skipna=True) * np.prod(delta_x) / s
     dawt = dawt.drop_vars(sdim)
-    dawt[sdim] = xo*s
+    dawt[sdim] = xo * s
 
     return dawt
 
@@ -248,7 +248,7 @@ def wvlt_power_spectrum(
     else:
         C = 1.0
 
-    return np.abs(dawt) ** 2 * (dawt[s.dims[0]]) ** -1 * C ** -2
+    return np.abs(dawt) ** 2 * (dawt[s.dims[0]]) ** -1 * xo ** 2 * C ** -2
 
 
 def wvlt_cross_spectrum(
@@ -344,4 +344,4 @@ def wvlt_cross_spectrum(
     else:
         C = 1.0
 
-    return (dawt * np.conj(dawt1)).real * (dawt[s.dims[0]]) ** -1 * C ** -2
+    return (dawt * np.conj(dawt1)).real * (dawt[s.dims[0]]) ** -1 * xo ** 2 * C ** -2
