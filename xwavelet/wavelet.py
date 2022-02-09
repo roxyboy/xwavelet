@@ -13,6 +13,8 @@ import xoa.filter as xoaf
 
 __all__ = [
     "dwvlt",
+    "wvlt_power_spectrum",
+    "wvlt_cross_spectrum",
 ]
 
 
