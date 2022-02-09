@@ -227,11 +227,11 @@ def wvlt_power_spectrum(
             true_amplitude=True,
         )
 
-        k2 = xr.zeros_like(Fw.real)
+        k2 = xr.zeros_like(Fw)
         for d in Fdims:
             k2 = k2 + Fw[d] ** 2
         dk = [np.diff(Fw[d]).data[0] for d in Fdims]
-        C = (np.abs(Fw) ** 2 / k2 * np.prod(dk)).sum(Fdims, skipna=True)
+        C = (np.abs(Fw) ** 2 / k2 * np.prod(dk)).sum(Fdims, skipna=True).real
 
     else:
         C = 1.0
