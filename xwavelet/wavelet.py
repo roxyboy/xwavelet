@@ -156,7 +156,7 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
 
     dawt = (da * np.conj(wavelet)).sum(dim, skipna=True) * np.prod(delta_x) / s
     dawt = dawt.drop_vars(sdim)
-    dawt[sdim] = xo*s
+    dawt[sdim] = xo * s
 
     return dawt
 
