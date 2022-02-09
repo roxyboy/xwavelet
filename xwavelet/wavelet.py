@@ -248,7 +248,7 @@ def wvlt_power_spectrum(
     else:
         C = 1.0
 
-    return np.abs(dawt) ** 2 * (dawt[s.dims[0]]) ** -1 * C ** -2
+    return np.abs(dawt) ** 2 * (dawt[s.dims[0]]) ** -1 * xo ** 2 * C ** -2
 
 
 def wvlt_cross_spectrum(
@@ -344,4 +344,4 @@ def wvlt_cross_spectrum(
     else:
         C = 1.0
 
-    return (dawt * np.conj(dawt1)).real * (dawt[s.dims[0]]) ** -1 * C ** -2
+    return (dawt * np.conj(dawt1)).real * (dawt[s.dims[0]]) ** -1 * xo ** 2 * C ** -2
