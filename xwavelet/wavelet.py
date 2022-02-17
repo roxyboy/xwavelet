@@ -181,7 +181,8 @@ def wvlt_power_spectrum(
     da : `xarray.DataArray`
         The data to have the spectral estimate.
     s : `xarray.DataArray`
-        Scaling parameter.
+        Non-dimensional scaling parameter. The dimensionalized length scales are
+        :math:`xo\times s`.
     spacing_tol : float, optional
         Spacing tolerance. Fourier transform should not be applied to uneven grid but
         this restriction can be relaxed with this setting. Use caution.
@@ -190,7 +191,7 @@ def wvlt_power_spectrum(
         dimensions will be transformed. If the inputs are dask arrays, the
         arrays must not be chunked along these dimensions.
     xo : float
-        Length scale.
+        Length scale of the mother wavelet.
     a : float
         Amplitude of wavelet.
     ntheta : int
@@ -274,7 +275,8 @@ def wvlt_cross_spectrum(
     da1 : `xarray.DataArray`
         The data to have the cross spectral estimate.
     s : `xarray.DataArray`
-        Scaling parameter.
+        Non-dimensional scaling parameter. The dimensionalized length scales are
+        :math:`xo\times s`.
     spacing_tol : float, optional
         Spacing tolerance. Fourier transform should not be applied to uneven grid but
         this restriction can be relaxed with this setting. Use caution.
@@ -283,7 +285,7 @@ def wvlt_cross_spectrum(
         dimensions will be transformed. If the inputs are dask arrays, the
         arrays must not be chunked along these dimensions.
     xo : float
-        Length scale.
+        Length scale of the mother wavelet.
     a : float
         Amplitude of wavelet.
     ntheta : int
