@@ -156,7 +156,7 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
 
     new_coords = dict()
     for d in dim:
-        new_coords[d] = da.d
+        new_coords[d] = da[d]
     wavelet = xr.DataArray(wavelet.data, dims=dim, coords=new_coords)
 
     dawt = (da * np.conj(wavelet)).sum(dim, skipna=True) * np.prod(delta_x) / s
