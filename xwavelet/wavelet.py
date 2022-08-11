@@ -79,11 +79,11 @@ def _morlet(xo, ntheta, a, s, y, x, dim):
     th = xr.DataArray(th, dims=["angle"], coords={"angle": th})
 
     # rotated positions
-    yp = np.sin(th) * s ** -1 * y
-    xp = np.cos(th) * s ** -1 * x
+    yp = np.sin(th) * s**-1 * y
+    xp = np.cos(th) * s**-1 * x
 
     arg1 = 2j * np.pi * ko * (yp - xp)
-    arg2 = -(x ** 2 + y ** 2) / 2 / s ** 2 / xo ** 2
+    arg2 = -(x**2 + y**2) / 2 / s**2 / xo**2
     m = a * np.exp(arg1) * np.exp(arg2)
 
     return m, th
@@ -142,8 +142,8 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
 
     # grid parameters
     if len(dim) == 2:
-        y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
-        x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
+        y = da[da.dims[axis_num[-2]]] - da[da.dims[axis_num[-2]]].mean()
+        x = da[da.dims[axis_num[-1]]] - da[da.dims[axis_num[-1]]].mean()
     else:
         raise NotImplementedError(
             "Only two-dimensional transforms are implemented for now."
@@ -153,6 +153,11 @@ def dwvlt(da, s, spacing_tol=1e-3, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="m
         wavelet, phi = _morlet(xo, ntheta, a, s, y, x, dim)
     else:
         raise NotImplementedError("Only the Morlet wavelet is implemented for now.")
+
+    new_coords = dict()
+    for d in dim:
+        new_coords[d] = da.d
+    wavelet = xr.DataArray(wavelet.data, dims=dim, coords=new_coords)
 
     dawt = (da * np.conj(wavelet)).sum(dim, skipna=True) * np.prod(delta_x) / s
     dawt = dawt.drop_vars(sdim)
@@ -249,7 +254,7 @@ def wvlt_power_spectrum(
     else:
         C = 1.0
 
-    return np.abs(dawt) ** 2 * (dawt[s.dims[0]]) ** -1 * xo ** 2 / C
+    return np.abs(dawt) ** 2 * (dawt[s.dims[0]]) ** -1 * xo**2 / C
 
 
 def wvlt_cross_spectrum(
@@ -346,4 +351,4 @@ def wvlt_cross_spectrum(
     else:
         C = 1.0
 
-    return (dawt * np.conj(dawt1)).real * (dawt[s.dims[0]]) ** -1 * xo ** 2 / C
+    return (dawt * np.conj(dawt1)).real * (dawt[s.dims[0]]) ** -1 * xo**2 / C
