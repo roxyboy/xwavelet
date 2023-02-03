@@ -13,3 +13,4 @@ xarray
 pandas
 xrft
 cftime
+xwavelet
