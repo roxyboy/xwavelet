@@ -24,7 +24,7 @@ def synthetic_field(N, dL, amp, s):
     k = np.fft.fftshift(np.fft.fftfreq(N, dL))
     l = np.fft.fftshift(np.fft.fftfreq(N, dL))
     kk, ll = np.meshgrid(k, l)
-    K = np.sqrt(kk ** 2 + ll ** 2)
+    K = np.sqrt(kk**2 + ll**2)
 
     ########
     # amplitude
@@ -90,7 +90,6 @@ def synthetic_field(N, dL, amp, s):
 def synthetic_field_xr(
     N, dL, amp, s, other_dim_sizes=None, dim_order=True, chunks=None
 ):
-
     theta = xr.DataArray(
         synthetic_field(N, dL, amp, s),
         dims=["y", "x"],

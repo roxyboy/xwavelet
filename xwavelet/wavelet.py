@@ -216,7 +216,6 @@ def wvlt_power_spectrum(
     )
 
     if normalize:
-
         axis_num = [da.get_axis_num(d) for d in dim]
         N = [da.shape[n] for n in axis_num]
         delta_x = _delta(da, dim, spacing_tol)
@@ -313,7 +312,6 @@ def wvlt_cross_spectrum(
     )
 
     if normalize:
-
         axis_num = [da.get_axis_num(d) for d in dim]
         N = [da.shape[n] for n in axis_num]
         delta_x = _delta(da, dim, spacing_tol)
