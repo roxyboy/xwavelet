@@ -127,7 +127,7 @@ def test_isotropic_ps_slope(chunk, N=512, dL=1.0, amp=1e0, slope=-3.0, xo=5):
     )
 
     if chunk:
-        theta = theta.chunk({"d0": 2, "y": 128, "x": 128})
+        theta = theta.chunk({"d0": 3, "y": 128, "x": 128})
 
     s = xr.DataArray(
         np.arange(0.5, 10.5, 0.5),
@@ -135,10 +135,10 @@ def test_isotropic_ps_slope(chunk, N=512, dL=1.0, amp=1e0, slope=-3.0, xo=5):
         coords={"scale": np.arange(0.5, 10.5, 0.5)},
     )
 
-    Wtheta = xwavelet.dwvlt(theta, s, dim=["y", "x"])
+    Wtheta = xwavelet.dwvlt(theta, s, dim=["y", "x"], xo=xo)
     iso_ps = (np.abs(Wtheta) ** 2).mean(["d0", "angle"]) * (Wtheta.scale) ** -1
     npt.assert_almost_equal(np.ma.masked_invalid(iso_ps).mask.sum(), 0.0)
-    y_fit, a, b = xrft.fit_loglog((xo * iso_ps.scale.values[:]) ** -1, iso_ps.values[:])
+    y_fit, a, b = xrft.fit_loglog((iso_ps.scale.values[:]) ** -1, iso_ps.values[:])
     npt.assert_allclose(a, slope, atol=0.2)
 
     iso_ps = xwavelet.wvlt_power_spectrum(theta, s, dim=["y", "x"], xo=xo).mean(
