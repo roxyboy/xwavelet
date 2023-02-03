@@ -12,7 +12,7 @@ import numpy.testing as npt
 import xarray.testing as xrt
 
 import xrft
-from .xwavelet import dwvlt, wvlt_power_spectrum
+from xwavelet.wavelet import dwvlt, wvlt_power_spectrum
 
 
 def synthetic_field(N, dL, amp, s):
@@ -140,7 +140,9 @@ def test_isotropic_ps_slope(chunk, N=512, dL=1.0, amp=1e0, slope=-3.0, xo=5):
     y_fit, a, b = xrft.fit_loglog((iso_ps.scale.values[:]) ** -1, iso_ps.values[:])
     npt.assert_allclose(a, slope, atol=0.2)
 
-    iso_ps = wvlt_power_spectrum(theta, s, dim=["y", "x"], xo=xo).mean(["d0", "angle"])
+    iso_ps = wvlt_power_spectrum(theta, s, dim=["y", "x"], xo=xo).mean(
+        ["d0", "angle"]
+    )
     npt.assert_almost_equal(np.ma.masked_invalid(iso_ps).mask.sum(), 0.0)
     y_fit, a, b = xrft.fit_loglog((xo * iso_ps.scale.values[:]) ** -1, iso_ps.values[:])
     npt.assert_allclose(a, slope, atol=0.2)
