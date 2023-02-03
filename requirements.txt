@@ -12,3 +12,4 @@ numpy
 xarray
 pandas
 xrft
+cftime
