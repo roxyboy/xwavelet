@@ -1,7 +1,7 @@
 xwavelet: Discrete wavelet transform with xarray
 ================================================
 
-|DOI| |Codecov|
+|DOI| |Codecov| |Code style|
 
 **xwavelet** is an open-source Python package for
 taking the discrete wavelet transform (DWVLT) on xarray_ and dask_ arrays.
@@ -19,6 +19,8 @@ Get in touch
 
 .. |DOI| image:: https://zenodo.org/badge/456706847.svg
    :target: https://zenodo.org/badge/latestdoi/456706847
-
 .. |Codecov| .. image:: https://codecov.io/github/roxyboy/xwavelet/coverage.svg?branch=wavelet 
    :target: https://codecov.io/github/roxyboy/xwavelet?branch=wavelet
+.. |Code style| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/python/black
+   :alt: Code style
