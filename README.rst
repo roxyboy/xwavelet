@@ -19,8 +19,9 @@ Get in touch
 
 .. |DOI| image:: https://zenodo.org/badge/456706847.svg
    :target: https://zenodo.org/badge/latestdoi/456706847
-.. |Codecov| .. image:: https://codecov.io/github/roxyboy/xwavelet/coverage.svg?branch=wavelet 
-   :target: https://codecov.io/github/roxyboy/xwavelet?branch=wavelet
+.. |Codecov| .. image:: https://codecov.io/gh/roxyboy/xwavelet/branch/wavelet
+   :target: https://codecov.io/gh/roxyboy/xwavelet
+   :alt: code coverage
 .. |Code style| image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/python/black
    :alt: Code style
