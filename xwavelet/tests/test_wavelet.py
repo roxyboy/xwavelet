@@ -128,11 +128,11 @@ def test_isotropic_ps_slope(chunk, N=256, dL=1.0, amp=1e0, slope=-3.0, xo=5):
     if chunk:
         theta = theta.chunk({"d0": 4, "y": 128, "x": 128})
 
-    reso = .5
+    reso = 0.5
     s = xr.DataArray(
-        np.arange(reso, 10.+reso, reso),
+        np.arange(reso, 10.0 + reso, reso),
         dims=["scale"],
-        coords={"scale": np.arange(reso, 10.+reso, reso)},
+        coords={"scale": np.arange(reso, 10.0 + reso, reso)},
     )
 
     Wtheta = dwvlt(theta, s, dim=["y", "x"], xo=xo)
