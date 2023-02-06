@@ -113,7 +113,7 @@ def synthetic_field_xr(
 
 
 @pytest.mark.parametrize("chunk", [False, True])
-def test_isotropic_ps_slope(chunk, N=256, dL=1.0, amp=1e0, slope=-3.0, xo=5):
+def test_isotropic_ps_slope(chunk, N=128, dL=1.0, amp=1e0, slope=-3.0, xo=5):
     """Test the spectral slope of isotropic power spectrum."""
 
     theta = synthetic_field_xr(
@@ -126,7 +126,7 @@ def test_isotropic_ps_slope(chunk, N=256, dL=1.0, amp=1e0, slope=-3.0, xo=5):
     )
 
     if chunk:
-        theta = theta.chunk({"d0": 4, "y": 128, "x": 128})
+        theta = theta.chunk({"d0": 10, "y": 64, "x": 64})
 
     reso = 0.5
     s = xr.DataArray(
