@@ -20,5 +20,5 @@ Get in touch
 .. |DOI| image:: https://zenodo.org/badge/456706847.svg
    :target: https://zenodo.org/badge/latestdoi/456706847
 
-.. |Codecov| .. image:: https://codecov.io/gh/roxyboy/xwavelet/branch/wavelet/graph/badge.svg?token=5XRFHJHGYT 
-   :target: https://codecov.io/gh/roxyboy/xwavelet
+.. |Codecov| .. image:: https://codecov.io/github/roxyboy/xwavelet/coverage.svg?branch=wavelet 
+   :target: https://codecov.io/github/roxyboy/xwavelet?branch=wavelet
