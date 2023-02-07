@@ -1,6 +1,7 @@
 codecov:
   require_ci_to_pass: no
   max_report_age: off
+  token: 5f3bd8c1-3b5b-47d5-ad0f-1e0ec7db47a4
 
 comment: false
 
