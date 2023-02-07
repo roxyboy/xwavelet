@@ -125,7 +125,7 @@ def test_isotropic_ps_slope(chunk, N=128, dL=1.0, amp=1e0, slope=-3.0, xo=50):
     )
 
     if chunk:
-        theta = theta.chunk({"d0": 20, "y": 64, "x": 64})
+        theta = theta.chunk({"d0": 30, "y": 64, "x": 64})
 
     s = xr.DataArray(
         np.linspace(0.1, 1.0, 20),
