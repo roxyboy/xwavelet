@@ -128,9 +128,9 @@ def test_isotropic_ps_slope(chunk, N=128, dL=1.0, amp=1e0, slope=-3.0, xo=50):
         theta = theta.chunk({"d0": 20, "y": 64, "x": 64})
 
     s = xr.DataArray(
-        np.linspace(.1, 1.0, 20),
+        np.linspace(0.1, 1.0, 20),
         dims=["scale"],
-        coords={"scale": np.linspace(.1, 1.0, 20)},
+        coords={"scale": np.linspace(0.1, 1.0, 20)},
     )
 
     Wtheta = dwvlt(theta, s, dim=["y", "x"], xo=xo)
