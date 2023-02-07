@@ -112,7 +112,7 @@ def synthetic_field_xr(
 
 
 @pytest.mark.parametrize("chunk", [False, True])
-def test_isotropic_ps_slope(chunk, N=128, dL=1.0, amp=1e0, slope=-3.0, xo=5):
+def test_isotropic_ps_slope(chunk, N=128, dL=1.0, amp=1e0, slope=-3.0, xo=50):
     """Test the spectral slope of isotropic power spectrum."""
 
     theta = synthetic_field_xr(
@@ -125,26 +125,25 @@ def test_isotropic_ps_slope(chunk, N=128, dL=1.0, amp=1e0, slope=-3.0, xo=5):
     )
 
     if chunk:
-        theta = theta.chunk({"d0": 10, "y": 64, "x": 64})
+        theta = theta.chunk({"d0": 20, "y": 64, "x": 64})
 
-    reso = 0.5
     s = xr.DataArray(
-        np.arange(reso, 10.0 + reso, reso),
+        np.linspace(.1, 1.0, 20),
         dims=["scale"],
-        coords={"scale": np.arange(reso, 10.0 + reso, reso)},
+        coords={"scale": np.linspace(.1, 1.0, 20)},
     )
 
     Wtheta = dwvlt(theta, s, dim=["y", "x"], xo=xo)
     iso_ps = (np.abs(Wtheta) ** 2).mean(["d0", "angle"]) * (Wtheta.scale) ** -1
     npt.assert_almost_equal(np.ma.masked_invalid(iso_ps).mask.sum(), 0.0)
     y_fit, a, b = xrft.fit_loglog(
-        (iso_ps.scale.values[1:-1]) ** -1, iso_ps.values[1:-1]
+        (iso_ps.scale.values[2:-1]) ** -1, iso_ps.values[2:-1]
     )
     npt.assert_allclose(a, slope, atol=0.3)
 
     iso_ps = wvlt_power_spectrum(theta, s, dim=["y", "x"], xo=xo).mean(["d0", "angle"])
     npt.assert_almost_equal(np.ma.masked_invalid(iso_ps).mask.sum(), 0.0)
     y_fit, a, b = xrft.fit_loglog(
-        (iso_ps.scale.values[1:-1]) ** -1, iso_ps.values[1:-1]
+        (iso_ps.scale.values[2:-1]) ** -1, iso_ps.values[2:-1]
     )
     npt.assert_allclose(a, slope, atol=0.3)
