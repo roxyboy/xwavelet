@@ -45,10 +45,15 @@ jobs:
         run: |
           pytest -n auto --cov=./ --cov-report=xml
       - name: Upload code coverage to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          file: ./coverage.xml
-          flags: unittests
-          env_vars: OS,PYTHON
-          name: codecov-umbrella
-          fail_ci_if_error: false
+        run: | 
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          CODECOV_TOKEN=5f3bd8c1-3b5b-47d5-ad0f-1e0ec7db47a4
+          ./codecov -t ${CODECOV_TOKEN}
+        # uses: codecov/codecov-action@v1
+        # with:
+          # file: ./coverage.xml
+          # flags: unittests
+          # env_vars: OS,PYTHON
+          # name: codecov-umbrella
+          # fail_ci_if_error: false
