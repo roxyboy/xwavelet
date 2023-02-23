@@ -7,6 +7,7 @@ xwavelet: Discrete wavelet transform with xarray
 taking the discrete wavelet transform (DWVLT) on xarray_ and dask_ arrays.
 
 A selected list of publications implementing xwavelet is:
+
 * `Uchida, T. et al. (2023). Wavelet-based wavenumber spectral estimate of eddy kinetic energy: Idealized quasi-geostrophic flow. JAMES. <https://doi.org/10.31223/X5C063>`_
 * `Uchida, T. et al. (2023). Wavelet-based wavenumber spectral estimate of eddy kinetic energy: Application to the North Atlantic. JAMES. <https://doi.org/10.31223/X5036Q>`_
 * ...
