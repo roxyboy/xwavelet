@@ -79,11 +79,11 @@ def _morlet(xo, ntheta, a, s, y, x, dim):
     th = xr.DataArray(th, dims=["angle"], coords={"angle": th})
 
     # rotated positions
-    yp = np.sin(th) * s**-1 * y
-    xp = np.cos(th) * s**-1 * x
+    yp = np.sin(th) * s**-1 * (y - y.mean())
+    xp = np.cos(th) * s**-1 * (x - x.mean())
 
     arg1 = 2j * np.pi * ko * (yp - xp)
-    arg2 = -(x**2 + y**2) / 2 / s**2 / xo**2
+    arg2 = -((x - x.mean()) ** 2 + (y - y.mean()) ** 2) / 2 / s**2 / xo**2
     m = a * np.exp(arg1) * np.exp(arg2)
 
     return m, th
