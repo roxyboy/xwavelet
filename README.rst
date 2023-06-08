@@ -1,10 +1,15 @@
-xwavelet: Discrete wavelet transform with xarray
-================================================
+xwavelet: Continuous wavelet transform with xarray
+==================================================
 
 |DOI| |codecov| |Code style|
 
 **xwavelet** is an open-source Python package for
-taking the discrete wavelet transform (DWVLT) on xarray_ and dask_ arrays.
+taking the continuous wavelet transform (CWT) on xarray_ and dask_ arrays.
+
+While more efficient packages exist for taking the discrete wavelet transforms (DWT), 
+DWT requires the data to be periodic.
+CWT negates this requirement of periodicity and allows for a localized *pseudo*-Fourier transform
+for inhomogeneous and anisotropic flows.
 
 A selected list of publications implementing xwavelet is:
 
