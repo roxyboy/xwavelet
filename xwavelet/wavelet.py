@@ -249,7 +249,7 @@ def wvlt_power_spectrum(
         x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
         if wtype == "morlet":
             # mother wavelet
-            wavelet, phi = _morlet(xo, ntheta, a, 1.0, y, x, dim)
+            wavelet, phi = _morlet(xo, ntheta, a, 1.0, y, x, **kwargs)
 
         Fdims = []
         chunks = dict()
@@ -362,7 +362,7 @@ def wvlt_cross_spectrum(
         x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
         if wtype == "morlet":
             # mother wavelet
-            wavelet, phi = _morlet(xo, ntheta, a, 1.0, y, x, dim)
+            wavelet, phi = _morlet(xo, ntheta, a, 1.0, y, x, **kwargs)
 
         Fdims = []
         chunks = dict()
