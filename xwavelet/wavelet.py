@@ -76,7 +76,7 @@ def _morlet(xo, ntheta, a, s, y, x, dim):
 
     # compute morlet wavelet
     th = np.arange(int(ntheta / 2)) * 2.0 * np.pi / ntheta
-    th = xr.DataArray(th, dims=["angle"], coords={"angle": th})
+    th = xr.DataArray(th, dims=["angle"], coords={"angle": th}).chunk({"angle": 1})
 
     # rotated positions
     yp = np.sin(th) * s**-1 * (y - y.mean())

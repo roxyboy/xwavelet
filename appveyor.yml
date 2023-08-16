@@ -2,8 +2,8 @@ build: false
 
 environment:
   matrix:
-    - PYTHON: "C:\\Python38"
-      PYTHON_VERSION: "3.8"
+    - PYTHON: "C:\\Python310"
+      PYTHON_VERSION: "3.10"
       PYTHON_ARCH: "32"
       MINICONDA: C:\Miniconda3
 
