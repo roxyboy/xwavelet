@@ -28,7 +28,16 @@ def sample_da_2d():
     return xr.DataArray(z, dims=["y", "x"], coords={"y": y, "x": x})
 
 
-def test_dimensions(sample_da_2d, sample_da_1d):
+@pytest.fixture
+def sample_da_3d():
+    x = np.linspace(0, 10, 11)
+    y = np.linspace(-4, 4, 17)
+    z = np.linspace(-4, 4, 9)
+    w = np.arange(11 * 17 * 9).reshape(9, 17, 11)
+    return xr.DataArray(w, dims=["z", "y", "x"], coords={"z": z, "y": y, "x": x})
+
+
+def test_dimensions(sample_da_3d, sample_da_2d, sample_da_1d):
     s = xr.DataArray(
         np.linspace(0.1, 1.0, 20),
         dims=["scale"],
@@ -38,6 +47,8 @@ def test_dimensions(sample_da_2d, sample_da_1d):
         cwvlt(sample_da_2d, s)
     with pytest.raises(ValueError):
         cwvlt2(sample_da_1d, s)
+    with pytest.raises(NotImplementedError):
+        wvlt_power_spectrum(sample_da_3d, s)
 
 
 def synthetic_field(N, dL, amp, s):
@@ -153,19 +164,26 @@ def test_isotropic_ps_slope(chunk, N=256, dL=1.0, amp=1e0, slope=-3.0, xo=50):
     if chunk:
         theta = theta.chunk({"d0": 5, "y": 64, "x": 64})
 
+    freq_r = xrft.isotropic_power_spectrum(
+        theta.chunk({"y": -1, "x": -1}), dim=["y", "x"], truncate=True
+    ).freq_r
     s = xr.DataArray(
-        np.linspace(0.1, 1.0, 20),
+        freq_r.data[1::2] ** -1 / xo,
         dims=["scale"],
-        coords={"scale": np.linspace(0.1, 1.0, 20)},
-    )
+        coords={"scale": freq_r.data[1::2] ** -1 / xo},
+    ).chunk({"scale": -1})
 
     kwargs = {"angle": 2}
 
     Wtheta = dwvlt(theta, s, dim=["y", "x"], xo=xo, **kwargs)
+    npt.assert_allclose(
+        Wtheta.values, cwvlt2(theta, s, dim=["y", "x"], x0=xo, **kwargs).values
+    )
+
     iso_ps = (np.abs(Wtheta) ** 2).mean(["d0", "angle"]) * (Wtheta.scale) ** -1
     npt.assert_almost_equal(np.ma.masked_invalid(iso_ps).mask.sum(), 0.0)
     y_fit, a, b = xrft.fit_loglog(
-        (iso_ps.scale.values[5:-1]) ** -1, iso_ps.values[5:-1]
+        (iso_ps.scale.values[2:-1]) ** -1, iso_ps.values[2:-1]
     )
     npt.assert_allclose(a, slope, atol=0.3)
 
@@ -174,7 +192,7 @@ def test_isotropic_ps_slope(chunk, N=256, dL=1.0, amp=1e0, slope=-3.0, xo=50):
     )
     npt.assert_almost_equal(np.ma.masked_invalid(iso_ps).mask.sum(), 0.0)
     y_fit, a, b = xrft.fit_loglog(
-        (iso_ps.scale.values[5:-1]) ** -1, iso_ps.values[5:-1]
+        (iso_ps.scale.values[2:-1]) ** -1, iso_ps.values[2:-1]
     )
     npt.assert_allclose(a, slope, atol=0.3)
 
