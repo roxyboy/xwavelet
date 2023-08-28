@@ -12,6 +12,8 @@ import xrft
 
 __all__ = [
     "dwvlt",
+    "cwvlt",
+    "cwvlt2",
     "wvlt_power_spectrum",
     "wvlt_cross_spectrum",
 ]
@@ -57,7 +59,35 @@ def _delta(da, dim, spacing_tol):
     return delta_x
 
 
-def _morlet(xo, ntheta, a, s, y, x, **kwargs):
+def _morlet(t0, a, s, t):
+    r"""
+    Define
+
+    .. math::
+        \psi = a e^{-2\pi i f_0 t} e^{-\frac{t^2}{2 t_0^2}}
+
+    as the morlet wavelet. Its transform is
+
+    .. math::
+        \psi_h = a 2\pi t_0^2 e^{-2 \pi^2 (f-f_0)^2 t_0^2}
+
+    Units of :math:`a` are :math:`T^{-1}`.
+    :math:`f_0` is defaulted to :math:`1/t_0`.
+    """
+
+    f0 = 1.0 / t0
+
+    # rotated positions
+    tp = s**-1 * (t - t.mean())
+
+    arg1 = 2j * np.pi * f0 * tp
+    arg2 = -((t - t.mean()) ** 2) / 2 / s**2 / t0**2
+    m = a * np.exp(arg1) * np.exp(arg2)
+
+    return m
+
+
+def _morlet2(x0, ntheta, a, s, y, x, **kwargs):
     r"""
     Define
 
@@ -73,7 +103,7 @@ def _morlet(xo, ntheta, a, s, y, x, **kwargs):
     :math:`k_0` is defaulted to :math:`1/x_0` in the zonal direction.
     """
 
-    ko = 1.0 / xo
+    k0 = 1.0 / x0
 
     # compute morlet wavelet
     th = np.arange(int(ntheta / 2)) * 2.0 * np.pi / ntheta
@@ -88,11 +118,14 @@ def _morlet(xo, ntheta, a, s, y, x, **kwargs):
     yp = np.sin(th) * s**-1 * (y - y.mean())
     xp = np.cos(th) * s**-1 * (x - x.mean())
 
-    arg1 = 2j * np.pi * ko * (yp - xp)
-    arg2 = -((x - x.mean()) ** 2 + (y - y.mean()) ** 2) / 2 / s**2 / xo**2
+    arg1 = 2j * np.pi * k0 * (yp - xp)
+    arg2 = -((x - x.mean()) ** 2 + (y - y.mean()) ** 2) / 2 / s**2 / x0**2
     m = a * np.exp(arg1) * np.exp(arg2)
 
     return m, th
+
+
+_xo_warning = "Input argument `xo` will be deprecated in the future versions of xwavelet and be replaced by `x0`"
 
 
 def dwvlt(
@@ -106,8 +139,39 @@ def dwvlt(
     wtype="morlet",
     **kwargs
 ):
+    """
+    Deprecated function. See cwvlt2 doc.
+    """
+    msg = (
+        "This function has been renamed and will disappear in the future."
+        + " Please use `cwvlt2` instead."
+    )
+    warnings.warn(msg, FutureWarning)
+
+    return cwvlt2(
+        da,
+        s,
+        spacing_tol=spacing_tol,
+        dim=dim,
+        x0=xo,
+        a=a,
+        ntheta=ntheta,
+        wtype=wtype,
+        **kwargs
+    )
+
+
+def cwvlt(
+    da,
+    s,
+    spacing_tol=1e-3,
+    dim=None,
+    t0=5 * 365 * 86400,
+    a=1.0,
+    wtype="morlet",
+):
     r"""
-    Compute discrete wavelet transform of da. Default is the Morlet wavelet.
+    Compute continuous one-dimensional wavelet transform of da. Default is the Morlet wavelet.
     Scale :math:`s` is dimensionless.
 
     Parameters
@@ -123,12 +187,10 @@ def dwvlt(
         The dimensions along which to take the transformation. If `None`, all
         dimensions will be transformed. If the inputs are dask arrays, the
         arrays must not be chunked along these dimensions.
-    xo : float
-        Length scale.
+    t0 : float
+        Time scale.
     a : float
         Amplitude of wavelet.
-    ntheta : int
-        Number of azimuthal angles the wavelet transform is taken over.
     wtype : str
         Type of wavelet.
 
@@ -145,6 +207,91 @@ def dwvlt(
     else:
         if isinstance(dim, str):
             dim = [dim]
+
+    if len(dim) != 1:
+        raise ValueError("The transformed dimension should be one-dimensional.")
+
+    sdim = s.dims[0]
+
+    # the axes along which to take wavelets
+    axis_num = [da.get_axis_num(d) for d in dim]
+
+    N = [da.shape[n] for n in axis_num]
+
+    # verify even spacing of input coordinates
+    delta_t = _delta(da, dim, spacing_tol)
+
+    # grid parameters
+    if len(dim) == 1:
+        t = da[da.dims[axis_num[0]]] - da[da.dims[axis_num[0]]].mean()
+    else:
+        raise NotImplementedError(
+            "Only one-dimensional transforms are implemented for now."
+        )
+
+    if wtype == "morlet":
+        wavelet = _morlet(t0, a, s, t)
+    else:
+        raise NotImplementedError("Only the Morlet wavelet is implemented for now.")
+
+    dawt = (da * np.conj(wavelet)).sum(dim, skipna=True) * delta_t / np.sqrt(np.abs(s))
+    dawt = dawt.drop_vars(sdim)
+    dawt[sdim] = t0 * s
+
+    return dawt
+
+
+def cwvlt2(
+    da,
+    s,
+    spacing_tol=1e-3,
+    dim=None,
+    x0=50e3,
+    a=1.0,
+    ntheta=16,
+    wtype="morlet",
+    **kwargs
+):
+    r"""
+    Compute continuous two-dimensional wavelet transform of da. Default is the Morlet wavelet.
+    Scale :math:`s` is dimensionless.
+
+    Parameters
+    ----------
+    da : `xarray.DataArray`
+        The data to be transformed.
+    s : `xarray.DataArray`
+        One-dimensional array with scaling parameter.
+    spacing_tol : float, optional
+        Spacing tolerance. Fourier transform should not be applied to uneven grid but
+        this restriction can be relaxed with this setting. Use caution.
+    dim : str or sequence of str, optional
+        The dimensions along which to take the transformation. If `None`, all
+        dimensions will be transformed. If the inputs are dask arrays, the
+        arrays must not be chunked along these dimensions.
+    x0 : float
+        Length scale.
+    a : float
+        Amplitude of wavelet.
+    ntheta : int
+        Number of azimuthal angles the wavelet transform is taken over.
+    wtype : str
+        Type of wavelet.
+
+    Returns
+    -------
+    dawt : `xarray.DataArray`
+        The output of the wavelet transformation, with appropriate dimensions.
+    """
+
+    if dim is None:
+        dim = list(da.dims)
+    else:
+        if isinstance(dim, str):
+            dim = [dim]
+
+    if len(dim) != 2:
+        raise ValueError("The transformed dimension should be two-dimensional.")
 
     sdim = s.dims[0]
 
@@ -166,13 +313,13 @@ def dwvlt(
         )
 
     if wtype == "morlet":
-        wavelet, phi = _morlet(xo, ntheta, a, s, y, x, **kwargs)
+        wavelet, phi = _morlet2(x0, ntheta, a, s, y, x, **kwargs)
     else:
         raise NotImplementedError("Only the Morlet wavelet is implemented for now.")
 
     dawt = (da * np.conj(wavelet)).sum(dim, skipna=True) * np.prod(delta_x) / s
     dawt = dawt.drop_vars(sdim)
-    dawt[sdim] = xo * s
+    dawt[sdim] = x0 * s
 
     return dawt
 
@@ -182,7 +329,7 @@ def wvlt_power_spectrum(
     s,
     spacing_tol=1e-3,
     dim=None,
-    xo=50e3,
+    x0=50e3,
     a=1.0,
     ntheta=16,
     wtype="morlet",
@@ -207,7 +354,7 @@ def wvlt_power_spectrum(
         The dimensions along which to take the transformation. If `None`, all
         dimensions will be transformed. If the inputs are dask arrays, the
         arrays must not be chunked along these dimensions.
-    xo : float
+    x0 : float
         Length scale of the mother wavelet.
     a : float
         Amplitude of wavelet.
@@ -228,28 +375,41 @@ def wvlt_power_spectrum(
         if isinstance(dim, str):
             dim = [dim]
 
-    dawt = dwvlt(
-        da,
-        s,
-        spacing_tol=spacing_tol,
-        dim=dim,
-        xo=xo,
-        a=a,
-        ntheta=ntheta,
-        wtype=wtype,
-        **kwargs
-    )
+    if "xo" in kwargs:
+        x0 = kwargs.get("xo")
+        warnings.warn(_xo_warning, FutureWarning)
+
+    if len(dim) == 1:
+        dawt = cwvlt(
+            da,
+            s,
+            spacing_tol=spacing_tol,
+            dim=dim,
+            t0=x0,
+            a=a,
+            wtype=wtype,
+        )
+    elif len(dim) == 2:
+        dawt = cwvlt2(
+            da,
+            s,
+            spacing_tol=spacing_tol,
+            dim=dim,
+            x0=x0,
+            a=a,
+            ntheta=ntheta,
+            wtype=wtype,
+            **kwargs
+        )
+    else:
+        raise NotImplementedError(
+            "Transformation for three dimensions and higher is not implemented."
+        )
 
     if normalize:
         axis_num = [da.get_axis_num(d) for d in dim]
         N = [da.shape[n] for n in axis_num]
         delta_x = _delta(da, dim, spacing_tol)
-
-        y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
-        x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
-        if wtype == "morlet":
-            # mother wavelet
-            wavelet, phi = _morlet(xo, ntheta, a, 1.0, y, x, **kwargs)
 
         Fdims = []
         chunks = dict()
@@ -257,12 +417,29 @@ def wvlt_power_spectrum(
             chunks[d] = -1
             Fdims.append("freq_" + d)
 
-        Fw = xrft.fft(
-            wavelet.isel(angle=0).chunk(chunks),
-            dim=dim,
-            true_phase=True,
-            true_amplitude=True,
-        )
+        if len(dim) == 1:
+            t = da[da.dims[axis_num[0]]] - N[0] / 2.0 * delta_x[0]
+            if wtype == "morlet":
+                # mother wavelet
+                wavelet = _morlet(x0, a, 1.0, t)
+            Fw = xrft.fft(
+                wavelet.chunk(chunks),
+                dim=dim,
+                true_phase=True,
+                true_amplitude=True,
+            )
+        elif len(dim) == 2:
+            y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
+            x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
+            if wtype == "morlet":
+                # mother wavelet
+                wavelet, phi = _morlet2(x0, ntheta, a, 1.0, y, x, **kwargs)
+            Fw = xrft.fft(
+                wavelet.isel(angle=0).chunk(chunks),
+                dim=dim,
+                true_phase=True,
+                true_amplitude=True,
+            )
 
         k2 = xr.zeros_like(Fw)
         for d in Fdims:
@@ -273,7 +450,10 @@ def wvlt_power_spectrum(
     else:
         C = 1.0
 
-    return np.abs(dawt) ** 2 * (dawt[s.dims[0]]) ** -1 * xo**2 / C
+    if len(dim) == 1:
+        return np.abs(dawt) ** 2 * x0 / C
+    elif len(dim) == 2:
+        return np.abs(dawt) ** 2 * (dawt[s.dims[0]]) ** -1 * x0**2 / C
 
 
 def wvlt_cross_spectrum(
@@ -282,7 +462,7 @@ def wvlt_cross_spectrum(
     s,
     spacing_tol=1e-3,
     dim=None,
-    xo=50e3,
+    x0=50e3,
     a=1.0,
     ntheta=16,
     wtype="morlet",
@@ -290,7 +470,7 @@ def wvlt_cross_spectrum(
     **kwargs
 ):
     r"""
-    Compute discrete wavelet cross spectrum of :math:`da` and :math:`da1`.
+    Compute continuous wavelet cross spectrum of :math:`da` and :math:`da1`.
     Scale :math:`s` is dimensionless.
 
     Parameters
@@ -309,7 +489,7 @@ def wvlt_cross_spectrum(
         The dimensions along which to take the transformation. If `None`, all
         dimensions will be transformed. If the inputs are dask arrays, the
         arrays must not be chunked along these dimensions.
-    xo : float
+    x0 : float
         Length scale of the mother wavelet.
     a : float
         Amplitude of wavelet.
@@ -330,39 +510,61 @@ def wvlt_cross_spectrum(
         if isinstance(dim, str):
             dim = [dim]
 
-    dawt = dwvlt(
-        da,
-        s,
-        spacing_tol=spacing_tol,
-        dim=dim,
-        xo=xo,
-        a=a,
-        ntheta=ntheta,
-        wtype=wtype,
-        **kwargs
-    )
-    dawt1 = dwvlt(
-        da1,
-        s,
-        spacing_tol=spacing_tol,
-        dim=dim,
-        xo=xo,
-        a=a,
-        ntheta=ntheta,
-        wtype=wtype,
-        **kwargs
-    )
+    if "xo" in kwargs:
+        x0 = kwargs.get("xo")
+        warnings.warn(_xo_warning, FutureWarning)
+
+    if len(dim) == 1:
+        dawt = cwvlt(
+            da,
+            s,
+            spacing_tol=spacing_tol,
+            dim=dim,
+            t0=x0,
+            a=a,
+            wtype=wtype,
+        )
+        dawt1 = cwvlt(
+            da1,
+            s,
+            spacing_tol=spacing_tol,
+            dim=dim,
+            t0=x0,
+            a=a,
+            wtype=wtype,
+        )
+    elif len(dim) == 2:
+        dawt = cwvlt2(
+            da,
+            s,
+            spacing_tol=spacing_tol,
+            dim=dim,
+            x0=x0,
+            a=a,
+            ntheta=ntheta,
+            wtype=wtype,
+            **kwargs
+        )
+        dawt1 = cwvlt2(
+            da1,
+            s,
+            spacing_tol=spacing_tol,
+            dim=dim,
+            x0=x0,
+            a=a,
+            ntheta=ntheta,
+            wtype=wtype,
+            **kwargs
+        )
+    else:
+        raise NotImplementedError(
+            "Transformation for three dimensions and higher is not implemented."
+        )
 
     if normalize:
         axis_num = [da.get_axis_num(d) for d in dim]
         N = [da.shape[n] for n in axis_num]
         delta_x = _delta(da, dim, spacing_tol)
-
-        y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
-        x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
-        if wtype == "morlet":
-            # mother wavelet
-            wavelet, phi = _morlet(xo, ntheta, a, 1.0, y, x, **kwargs)
 
         Fdims = []
         chunks = dict()
@@ -370,12 +572,29 @@ def wvlt_cross_spectrum(
             chunks[d] = -1
             Fdims.append("freq_" + d)
 
-        Fw = xrft.fft(
-            wavelet.isel(angle=0).chunk(chunks),
-            dim=dim,
-            true_phase=True,
-            true_amplitude=True,
-        )
+        if len(dim) == 1:
+            t = da[da.dims[axis_num[0]]] - N[0] / 2.0 * delta_x[0]
+            if wtype == "morlet":
+                # mother wavelet
+                wavelet = _morlet(x0, a, 1.0, t)
+            Fw = xrft.fft(
+                wavelet.chunk(chunks),
+                dim=dim,
+                true_phase=True,
+                true_amplitude=True,
+            )
+        elif len(dim) == 2:
+            y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
+            x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
+            if wtype == "morlet":
+                # mother wavelet
+                wavelet, phi = _morlet2(x0, ntheta, a, 1.0, y, x, **kwargs)
+            Fw = xrft.fft(
+                wavelet.isel(angle=0).chunk(chunks),
+                dim=dim,
+                true_phase=True,
+                true_amplitude=True,
+            )
 
         k2 = xr.zeros_like(Fw)
         for d in Fdims:
@@ -386,4 +605,7 @@ def wvlt_cross_spectrum(
     else:
         C = 1.0
 
-    return (dawt * np.conj(dawt1)).real * (dawt[s.dims[0]]) ** -1 * xo**2 / C
+    if len(dim) == 1:
+        return (dawt * np.conj(dawt1)).real * x0 / C
+    elif len(dim) == 2:
+        return (dawt * np.conj(dawt1)).real * (dawt[s.dims[0]]) ** -1 * x0**2 / C
