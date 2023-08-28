@@ -84,7 +84,7 @@ def _morlet(t0, a, s, t):
     arg2 = -((t - t.mean()) ** 2) / 2 / s**2 / t0**2
     m = a * np.exp(arg1) * np.exp(arg2)
 
-    return m, th
+    return m
 
 
 def _morlet2(x0, ntheta, a, s, y, x, **kwargs):
@@ -169,7 +169,6 @@ def cwvlt(
     t0=5 * 365 * 86400,
     a=1.0,
     wtype="morlet",
-    **kwargs
 ):
     r"""
     Compute continuous one-dimensional wavelet transform of da. Default is the Morlet wavelet.
@@ -382,7 +381,13 @@ def wvlt_power_spectrum(
 
     if len(dim) == 1:
         dawt = cwvlt(
-            da, s, spacing_tol=spacing_tol, dim=dim, t0=x0, a=a, wtype=wtype, **kwargs
+            da,
+            s,
+            spacing_tol=spacing_tol,
+            dim=dim,
+            t0=x0,
+            a=a,
+            wtype=wtype,
         )
     elif len(dim) == 2:
         dawt = cwvlt2(
@@ -406,30 +411,35 @@ def wvlt_power_spectrum(
         N = [da.shape[n] for n in axis_num]
         delta_x = _delta(da, dim, spacing_tol)
 
-        if len(dim) == 1:
-            t = da[da.dims[axis_num[0]]] - N[0] / 2.0 * delta_x[0]
-            if wtype == "morlet":
-                # mother wavelet
-                wavelet = _morlet(x0, a, 1.0, t)
-        elif len(dim) == 2:
-            y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
-            x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
-            if wtype == "morlet":
-                # mother wavelet
-                wavelet, phi = _morlet2(x0, ntheta, a, 1.0, y, x, **kwargs)
-
         Fdims = []
         chunks = dict()
         for d in dim:
             chunks[d] = -1
             Fdims.append("freq_" + d)
 
-        Fw = xrft.fft(
-            wavelet.isel(angle=0).chunk(chunks),
-            dim=dim,
-            true_phase=True,
-            true_amplitude=True,
-        )
+        if len(dim) == 1:
+            t = da[da.dims[axis_num[0]]] - N[0] / 2.0 * delta_x[0]
+            if wtype == "morlet":
+                # mother wavelet
+                wavelet = _morlet(x0, a, 1.0, t)
+            Fw = xrft.fft(
+                wavelet.chunk(chunks),
+                dim=dim,
+                true_phase=True,
+                true_amplitude=True,
+            )
+        elif len(dim) == 2:
+            y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
+            x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
+            if wtype == "morlet":
+                # mother wavelet
+                wavelet, phi = _morlet2(x0, ntheta, a, 1.0, y, x, **kwargs)
+            Fw = xrft.fft(
+                wavelet.isel(angle=0).chunk(chunks),
+                dim=dim,
+                true_phase=True,
+                true_amplitude=True,
+            )
 
         k2 = xr.zeros_like(Fw)
         for d in Fdims:
@@ -506,10 +516,22 @@ def wvlt_cross_spectrum(
 
     if len(dim) == 1:
         dawt = cwvlt(
-            da, s, spacing_tol=spacing_tol, dim=dim, x0=x0, a=a, wtype=wtype, **kwargs
+            da,
+            s,
+            spacing_tol=spacing_tol,
+            dim=dim,
+            t0=x0,
+            a=a,
+            wtype=wtype,
         )
         dawt1 = cwvlt(
-            da1, s, spacing_tol=spacing_tol, dim=dim, x0=x0, a=a, wtype=wtype, **kwargs
+            da1,
+            s,
+            spacing_tol=spacing_tol,
+            dim=dim,
+            t0=x0,
+            a=a,
+            wtype=wtype,
         )
     elif len(dim) == 2:
         dawt = cwvlt2(
@@ -544,30 +566,35 @@ def wvlt_cross_spectrum(
         N = [da.shape[n] for n in axis_num]
         delta_x = _delta(da, dim, spacing_tol)
 
-        if len(dim) == 1:
-            t = da[da.dims[axis_num[0]]] - N[0] / 2.0 * delta_x[0]
-            if wtype == "morlet":
-                # mother wavelet
-                wavelet = _morlet(x0, a, 1.0, t)
-        elif len(dim) == 2:
-            y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
-            x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
-            if wtype == "morlet":
-                # mother wavelet
-                wavelet, phi = _morlet2(x0, ntheta, a, 1.0, y, x, **kwargs)
-
         Fdims = []
         chunks = dict()
         for d in dim:
             chunks[d] = -1
             Fdims.append("freq_" + d)
 
-        Fw = xrft.fft(
-            wavelet.isel(angle=0).chunk(chunks),
-            dim=dim,
-            true_phase=True,
-            true_amplitude=True,
-        )
+        if len(dim) == 1:
+            t = da[da.dims[axis_num[0]]] - N[0] / 2.0 * delta_x[0]
+            if wtype == "morlet":
+                # mother wavelet
+                wavelet = _morlet(x0, a, 1.0, t)
+            Fw = xrft.fft(
+                wavelet.chunk(chunks),
+                dim=dim,
+                true_phase=True,
+                true_amplitude=True,
+            )
+        elif len(dim) == 2:
+            y = da[da.dims[axis_num[-2]]] - N[-2] / 2.0 * delta_x[-2]
+            x = da[da.dims[axis_num[-1]]] - N[-1] / 2.0 * delta_x[-1]
+            if wtype == "morlet":
+                # mother wavelet
+                wavelet, phi = _morlet2(x0, ntheta, a, 1.0, y, x, **kwargs)
+            Fw = xrft.fft(
+                wavelet.isel(angle=0).chunk(chunks),
+                dim=dim,
+                true_phase=True,
+                true_amplitude=True,
+            )
 
         k2 = xr.zeros_like(Fw)
         for d in Fdims:

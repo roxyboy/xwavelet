@@ -11,7 +11,13 @@ import numpy.testing as npt
 import xarray.testing as xrt
 
 import xrft
-from xwavelet.wavelet import dwvlt, cwvlt, cwvlt2, wvlt_power_spectrum
+from xwavelet.wavelet import (
+    dwvlt,
+    cwvlt,
+    cwvlt2,
+    wvlt_power_spectrum,
+    wvlt_cross_spectrum,
+)
 
 
 @pytest.fixture
@@ -37,18 +43,38 @@ def sample_da_3d():
     return xr.DataArray(w, dims=["z", "y", "x"], coords={"z": z, "y": y, "x": x})
 
 
-def test_dimensions(sample_da_3d, sample_da_2d, sample_da_1d):
+def test_dimensions(sample_da_3d, sample_da_2d, sample_da_1d, x0=1.0):
     s = xr.DataArray(
         np.linspace(0.1, 1.0, 20),
         dims=["scale"],
         coords={"scale": np.linspace(0.1, 1.0, 20)},
     )
     with pytest.raises(ValueError):
-        cwvlt(sample_da_2d, s)
+        cwvlt(sample_da_2d, s, t0=x0)
     with pytest.raises(ValueError):
-        cwvlt2(sample_da_1d, s)
+        cwvlt2(sample_da_1d, s, x0=x0)
     with pytest.raises(NotImplementedError):
-        wvlt_power_spectrum(sample_da_3d, s)
+        wvlt_power_spectrum(sample_da_3d, s, x0=x0)
+    with pytest.raises(NotImplementedError):
+        wvlt_cross_spectrum(sample_da_3d, sample_da_3d, s, x0=x0)
+
+
+def test_convergence(sample_da_2d, sample_da_1d, x0=1.0):
+    s = xr.DataArray(
+        np.linspace(0.1, 1.0, 20),
+        dims=["scale"],
+        coords={"scale": np.linspace(0.1, 1.0, 20)},
+    )
+
+    npt.assert_allclose(
+        wvlt_power_spectrum(sample_da_2d, s, x0=x0).values,
+        wvlt_cross_spectrum(sample_da_2d, sample_da_2d, s, x0=x0).values,
+    )
+
+    npt.assert_allclose(
+        wvlt_power_spectrum(sample_da_1d, s, x0=x0).values,
+        wvlt_cross_spectrum(sample_da_1d, sample_da_1d, s, x0=x0).values,
+    )
 
 
 def synthetic_field(N, dL, amp, s):
