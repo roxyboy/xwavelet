@@ -22,8 +22,12 @@ from xwavelet.wavelet import (
 
 @pytest.fixture
 def sample_da_1d():
-    t = np.linspace(0, 10, 11)
-    return xr.DataArray(t, dims=["t"], coords={"t": t})
+    time = np.arange(0, 360 * 15 * 86400, 5 * 86400)
+    freq0 = (180 * 86400) ** -1
+    da = xr.DataArray(
+        np.sin(2 * np.pi * freq0 * time), dims=["time"], coords={"time": time}
+    )
+    return da
 
 
 @pytest.fixture
@@ -50,7 +54,7 @@ def test_dimensions(sample_da_3d, sample_da_2d, sample_da_1d, x0=1.0):
         coords={"scale": np.linspace(0.1, 1.0, 20)},
     )
     with pytest.raises(ValueError):
-        cwvlt(sample_da_2d, s, t0=x0)
+        cwvlt(sample_da_2d, s, t0=(180 * 86400))
     with pytest.raises(ValueError):
         cwvlt2(sample_da_1d, s, x0=x0)
     with pytest.raises(NotImplementedError):
@@ -66,14 +70,50 @@ def test_convergence(sample_da_2d, sample_da_1d, x0=1.0):
         coords={"scale": np.linspace(0.1, 1.0, 20)},
     )
 
-    npt.assert_allclose(
+    npt.assert_almost_equal(
         wvlt_power_spectrum(sample_da_2d, s, x0=x0).values,
         wvlt_cross_spectrum(sample_da_2d, sample_da_2d, s, x0=x0).values,
     )
 
-    npt.assert_allclose(
-        wvlt_power_spectrum(sample_da_1d, s, x0=x0).values,
-        wvlt_cross_spectrum(sample_da_1d, sample_da_1d, s, x0=x0).values,
+    npt.assert_almost_equal(
+        wvlt_power_spectrum(sample_da_1d, s, x0=(180 * 86400)).values,
+        wvlt_cross_spectrum(sample_da_1d, sample_da_1d, s, x0=(180 * 86400)).values,
+    )
+
+
+def test_wtype(sample_da_2d, sample_da_1d, x0=1.0):
+    s = xr.DataArray(
+        np.linspace(0.1, 1.0, 20),
+        dims=["scale"],
+        coords={"scale": np.linspace(0.1, 1.0, 20)},
+    )
+    with pytest.raises(NotImplementedError):
+        cwvlt2(sample_da_2d, s, x0=x0, wtype=None)
+        cwvlt2(sample_da_2d, s, x0=x0, wtype="boxcar")
+    with pytest.raises(NotImplementedError):
+        cwvlt(sample_da_1d, s, t0=(180 * 86400) ** -1, wtype=None)
+        cwvlt(sample_da_1d, s, t0=(180 * 86400) ** -1, wtype="boxcar")
+
+
+def test_frequency(sample_da_1d, t0=(180 * 86400)):
+    fda = xrft.power_spectrum(
+        sample_da_1d,
+    )
+    s = (
+        xr.DataArray(
+            fda.freq_time[len(sample_da_1d.time) // 2 + 1 :].data ** -1,
+            dims=["scale"],
+            coords={
+                "scale": fda.freq_time[len(sample_da_1d.time) // 2 + 1 :].data ** -1
+            },
+        )
+        / t0
+    )
+    wda = wvlt_power_spectrum(sample_da_1d, s, x0=t0)
+
+    npt.assert_equal(
+        np.sort(wda.values.argsort()[-3:]),
+        np.sort(fda.values[len(sample_da_1d.time) // 2 + 1 :].argsort()[-3:]),
     )
 
 

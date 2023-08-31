@@ -37,18 +37,14 @@ def _diff_coord(coord):
         return np.diff(coord)
 
 
-def _delta(da, dim, spacing_tol):
+def _delta(da, dim):
     """Returns the grid spacing"""
 
     delta_x = []
     for d in dim:
         diff = _diff_coord(da[d])
         delta = np.abs(diff[0])
-        if not np.allclose(diff, diff[0], rtol=spacing_tol):
-            raise ValueError(
-                "Can't take wavelet transform because "
-                "coodinate %s is not evenly spaced" % d
-            )
+
         if delta == 0.0:
             raise ValueError(
                 "Can't take wavelet transform because spacing in coordinate %s is zero"
@@ -128,17 +124,7 @@ def _morlet2(x0, ntheta, a, s, y, x, **kwargs):
 _xo_warning = "Input argument `xo` will be deprecated in the future versions of xwavelet and be replaced by `x0`"
 
 
-def dwvlt(
-    da,
-    s,
-    spacing_tol=1e-3,
-    dim=None,
-    xo=50e3,
-    a=1.0,
-    ntheta=16,
-    wtype="morlet",
-    **kwargs
-):
+def dwvlt(da, s, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs):
     """
     Deprecated function. See cwvlt2 doc.
     """
@@ -148,23 +134,12 @@ def dwvlt(
     )
     warnings.warn(msg, FutureWarning)
 
-    return cwvlt2(
-        da,
-        s,
-        spacing_tol=spacing_tol,
-        dim=dim,
-        x0=xo,
-        a=a,
-        ntheta=ntheta,
-        wtype=wtype,
-        **kwargs
-    )
+    return cwvlt2(da, s, dim=dim, x0=xo, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
 
 
 def cwvlt(
     da,
     s,
-    spacing_tol=1e-3,
     dim=None,
     t0=5 * 365 * 86400,
     a=1.0,
@@ -180,9 +155,6 @@ def cwvlt(
         The data to be transformed.
     s : `xarray.DataArray`
         One-dimensional array with scaling parameter.
-    spacing_tol : float, optional
-        Spacing tolerance. Fourier transform should not be applied to uneven grid but
-        this restriction can be relaxed with this setting. Use caution.
     dim : str or sequence of str, optional
         The dimensions along which to take the transformation. If `None`, all
         dimensions will be transformed. If the inputs are dask arrays, the
@@ -218,8 +190,7 @@ def cwvlt(
 
     N = [da.shape[n] for n in axis_num]
 
-    # verify even spacing of input coordinates
-    delta_t = _delta(da, dim, spacing_tol)
+    delta_t = _delta(da, dim)
 
     # grid parameters
     if len(dim) == 1:
@@ -241,17 +212,7 @@ def cwvlt(
     return dawt
 
 
-def cwvlt2(
-    da,
-    s,
-    spacing_tol=1e-3,
-    dim=None,
-    x0=50e3,
-    a=1.0,
-    ntheta=16,
-    wtype="morlet",
-    **kwargs
-):
+def cwvlt2(da, s, dim=None, x0=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs):
     r"""
     Compute continuous two-dimensional wavelet transform of da. Default is the Morlet wavelet.
     Scale :math:`s` is dimensionless.
@@ -262,9 +223,6 @@ def cwvlt2(
         The data to be transformed.
     s : `xarray.DataArray`
         One-dimensional array with scaling parameter.
-    spacing_tol : float, optional
-        Spacing tolerance. Fourier transform should not be applied to uneven grid but
-        this restriction can be relaxed with this setting. Use caution.
     dim : str or sequence of str, optional
         The dimensions along which to take the transformation. If `None`, all
         dimensions will be transformed. If the inputs are dask arrays, the
@@ -300,8 +258,7 @@ def cwvlt2(
 
     N = [da.shape[n] for n in axis_num]
 
-    # verify even spacing of input coordinates
-    delta_x = _delta(da, dim, spacing_tol)
+    delta_x = _delta(da, dim)
 
     # grid parameters
     if len(dim) == 2:
@@ -325,16 +282,7 @@ def cwvlt2(
 
 
 def wvlt_power_spectrum(
-    da,
-    s,
-    spacing_tol=1e-3,
-    dim=None,
-    x0=50e3,
-    a=1.0,
-    ntheta=16,
-    wtype="morlet",
-    normalize=True,
-    **kwargs
+    da, s, dim=None, x0=50e3, a=1.0, ntheta=16, wtype="morlet", normalize=True, **kwargs
 ):
     r"""
     Compute discrete wavelet power spectrum of :math:`da`.
@@ -346,10 +294,7 @@ def wvlt_power_spectrum(
         The data to have the spectral estimate.
     s : `xarray.DataArray`
         Non-dimensional scaling parameter. The dimensionalized length scales are
-        :math:`xo\times s`.
-    spacing_tol : float, optional
-        Spacing tolerance. Fourier transform should not be applied to uneven grid but
-        this restriction can be relaxed with this setting. Use caution.
+        :math:`x0\times s`.
     dim : str or sequence of str, optional
         The dimensions along which to take the transformation. If `None`, all
         dimensions will be transformed. If the inputs are dask arrays, the
@@ -383,24 +328,13 @@ def wvlt_power_spectrum(
         dawt = cwvlt(
             da,
             s,
-            spacing_tol=spacing_tol,
             dim=dim,
             t0=x0,
             a=a,
             wtype=wtype,
         )
     elif len(dim) == 2:
-        dawt = cwvlt2(
-            da,
-            s,
-            spacing_tol=spacing_tol,
-            dim=dim,
-            x0=x0,
-            a=a,
-            ntheta=ntheta,
-            wtype=wtype,
-            **kwargs
-        )
+        dawt = cwvlt2(da, s, dim=dim, x0=x0, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
     else:
         raise NotImplementedError(
             "Transformation for three dimensions and higher is not implemented."
@@ -409,7 +343,7 @@ def wvlt_power_spectrum(
     if normalize:
         axis_num = [da.get_axis_num(d) for d in dim]
         N = [da.shape[n] for n in axis_num]
-        delta_x = _delta(da, dim, spacing_tol)
+        delta_x = _delta(da, dim)
 
         Fdims = []
         chunks = dict()
@@ -460,7 +394,6 @@ def wvlt_cross_spectrum(
     da,
     da1,
     s,
-    spacing_tol=1e-3,
     dim=None,
     x0=50e3,
     a=1.0,
@@ -481,10 +414,7 @@ def wvlt_cross_spectrum(
         The data to have the cross spectral estimate.
     s : `xarray.DataArray`
         Non-dimensional scaling parameter. The dimensionalized length scales are
-        :math:`xo\times s`.
-    spacing_tol : float, optional
-        Spacing tolerance. Fourier transform should not be applied to uneven grid but
-        this restriction can be relaxed with this setting. Use caution.
+        :math:`x0\times s`.
     dim : str or sequence of str, optional
         The dimensions along which to take the transformation. If `None`, all
         dimensions will be transformed. If the inputs are dask arrays, the
@@ -518,7 +448,6 @@ def wvlt_cross_spectrum(
         dawt = cwvlt(
             da,
             s,
-            spacing_tol=spacing_tol,
             dim=dim,
             t0=x0,
             a=a,
@@ -527,34 +456,15 @@ def wvlt_cross_spectrum(
         dawt1 = cwvlt(
             da1,
             s,
-            spacing_tol=spacing_tol,
             dim=dim,
             t0=x0,
             a=a,
             wtype=wtype,
         )
     elif len(dim) == 2:
-        dawt = cwvlt2(
-            da,
-            s,
-            spacing_tol=spacing_tol,
-            dim=dim,
-            x0=x0,
-            a=a,
-            ntheta=ntheta,
-            wtype=wtype,
-            **kwargs
-        )
+        dawt = cwvlt2(da, s, dim=dim, x0=x0, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
         dawt1 = cwvlt2(
-            da1,
-            s,
-            spacing_tol=spacing_tol,
-            dim=dim,
-            x0=x0,
-            a=a,
-            ntheta=ntheta,
-            wtype=wtype,
-            **kwargs
+            da1, s, dim=dim, x0=x0, a=a, ntheta=ntheta, wtype=wtype, **kwargs
         )
     else:
         raise NotImplementedError(
@@ -564,7 +474,7 @@ def wvlt_cross_spectrum(
     if normalize:
         axis_num = [da.get_axis_num(d) for d in dim]
         N = [da.shape[n] for n in axis_num]
-        delta_x = _delta(da, dim, spacing_tol)
+        delta_x = _delta(da, dim)
 
         Fdims = []
         chunks = dict()
