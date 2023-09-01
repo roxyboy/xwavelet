@@ -109,6 +109,11 @@ def test_frequency(sample_da_1d, t0=(180 * 86400)):
         )
         / t0
     )
+
+    tau = np.datetime64("2005-02-25")
+    with pytest.raises(ValueError):
+        cwvlt(sample_da_1d, s, t0=t0, tau=tau)
+
     wda = wvlt_power_spectrum(sample_da_1d, s, x0=t0)
 
     npt.assert_equal(
@@ -215,7 +220,7 @@ def synthetic_field_xr(
 
 
 @pytest.mark.parametrize("chunk", [False, True])
-def test_isotropic_ps_slope(chunk, N=256, dL=1.0, amp=1e0, slope=-3.0, xo=50):
+def test_isotropic_ps_slope(chunk, N=256, dL=1.0, amp=1e0, slope=-2.0, xo=50):
     """Test the spectral slope of isotropic power spectrum."""
 
     theta = synthetic_field_xr(
