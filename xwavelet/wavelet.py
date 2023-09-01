@@ -74,10 +74,10 @@ def _morlet(t0, a, s, t):
     f0 = 1.0 / t0
 
     # rotated positions
-    tp = s**-1 * (t - t.mean())
+    tp = s**-1 * t
 
     arg1 = 2j * np.pi * f0 * tp
-    arg2 = -((t - t.mean()) ** 2) / 2 / s**2 / t0**2
+    arg2 = -(t**2) / 2 / s**2 / t0**2
     m = a * np.exp(arg1) * np.exp(arg2)
 
     return m
@@ -111,11 +111,11 @@ def _morlet2(x0, ntheta, a, s, y, x, **kwargs):
             th = th.chunk(chunk)
 
     # rotated positions
-    yp = np.sin(th) * s**-1 * (y - y.mean())
-    xp = np.cos(th) * s**-1 * (x - x.mean())
+    yp = np.sin(th) * s**-1 * y
+    xp = np.cos(th) * s**-1 * x
 
     arg1 = 2j * np.pi * k0 * (yp - xp)
-    arg2 = -((x - x.mean()) ** 2 + (y - y.mean()) ** 2) / 2 / s**2 / x0**2
+    arg2 = -(x**2 + y**2) / 2 / s**2 / x0**2
     m = a * np.exp(arg1) * np.exp(arg2)
 
     return m, th
@@ -144,6 +144,7 @@ def cwvlt(
     t0=5 * 365 * 86400,
     a=1.0,
     wtype="morlet",
+    tau=None,
 ):
     r"""
     Compute continuous one-dimensional wavelet transform of da. Default is the Morlet wavelet.
@@ -160,18 +161,18 @@ def cwvlt(
         dimensions will be transformed. If the inputs are dask arrays, the
         arrays must not be chunked along these dimensions.
     t0 : float
-        Time scale.
+        Characteristic time scale.
     a : float
         Amplitude of wavelet.
     wtype : str
         Type of wavelet.
+    tau : float
+        Coordinate where the wavelet is centered around.
 
     Returns
     -------
     dawt : `xarray.DataArray`
         The output of the wavelet transformation, with appropriate dimensions.
-    wavelet : `xarray.DataArray`
-        The wavelet with appropriate dimensions.
     """
 
     if dim is None:
@@ -193,12 +194,16 @@ def cwvlt(
     delta_t = _delta(da, dim)
 
     # grid parameters
-    if len(dim) == 1:
-        t = da[da.dims[axis_num[0]]] - da[da.dims[axis_num[0]]].mean()
+    if tau == None:
+        tau = da[da.dims[axis_num[0]]].mean()
     else:
-        raise NotImplementedError(
-            "Only one-dimensional transforms are implemented for now."
-        )
+        if (
+            type(tau) == np.datetime64
+            or type(tau) == pd._libs.tslibs.timestamps.Timestamp
+        ):
+            raise ValueError("The units of `tau` should be in the metrical system.")
+
+    t = da[da.dims[axis_num[0]]] - tau
 
     if wtype == "morlet":
         wavelet = _morlet(t0, a, s, t)
@@ -228,7 +233,7 @@ def cwvlt2(da, s, dim=None, x0=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs)
         dimensions will be transformed. If the inputs are dask arrays, the
         arrays must not be chunked along these dimensions.
     x0 : float
-        Length scale.
+        Characteristic length scale.
     a : float
         Amplitude of wavelet.
     ntheta : int
@@ -249,7 +254,7 @@ def cwvlt2(da, s, dim=None, x0=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs)
             dim = [dim]
 
     if len(dim) != 2:
-        raise ValueError("The transformed dimension should be two-dimensional.")
+        raise ValueError("The transformed dimensions should be two-dimensional.")
 
     sdim = s.dims[0]
 
@@ -261,13 +266,8 @@ def cwvlt2(da, s, dim=None, x0=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs)
     delta_x = _delta(da, dim)
 
     # grid parameters
-    if len(dim) == 2:
-        y = da[da.dims[axis_num[-2]]] - da[da.dims[axis_num[-2]]].mean()
-        x = da[da.dims[axis_num[-1]]] - da[da.dims[axis_num[-1]]].mean()
-    else:
-        raise NotImplementedError(
-            "Only two-dimensional transforms are implemented for now."
-        )
+    y = da[da.dims[axis_num[-2]]] - da[da.dims[axis_num[-2]]].mean()
+    x = da[da.dims[axis_num[-1]]] - da[da.dims[axis_num[-1]]].mean()
 
     if wtype == "morlet":
         wavelet, phi = _morlet2(x0, ntheta, a, s, y, x, **kwargs)
