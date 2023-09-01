@@ -282,7 +282,16 @@ def cwvlt2(da, s, dim=None, x0=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs)
 
 
 def wvlt_power_spectrum(
-    da, s, dim=None, x0=50e3, a=1.0, ntheta=16, wtype="morlet", normalize=True, **kwargs
+    da,
+    s,
+    dim=None,
+    x0=50e3,
+    a=1.0,
+    ntheta=16,
+    wtype="morlet",
+    tau=None,
+    normalize=True,
+    **kwargs
 ):
     r"""
     Compute discrete wavelet power spectrum of :math:`da`.
@@ -307,6 +316,11 @@ def wvlt_power_spectrum(
         Number of azimuthal angles the wavelet transform is taken over.
     wtype : str
         Type of wavelet.
+    tau : float
+        Coordinate where the wavelet is centered around.
+        Only called when the transform is 1D.
+    normalize: bool
+        When set as `True`, normalization is applied to satisfy the Parseval's equality.
 
     Returns
     -------
@@ -332,6 +346,7 @@ def wvlt_power_spectrum(
             t0=x0,
             a=a,
             wtype=wtype,
+            tau=tau,
         )
     elif len(dim) == 2:
         dawt = cwvlt2(da, s, dim=dim, x0=x0, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
@@ -399,6 +414,7 @@ def wvlt_cross_spectrum(
     a=1.0,
     ntheta=16,
     wtype="morlet",
+    tau=None,
     normalize=True,
     **kwargs
 ):
@@ -427,6 +443,11 @@ def wvlt_cross_spectrum(
         Number of azimuthal angles the wavelet transform is taken over.
     wtype : str
         Type of wavelet.
+    tau : float
+        Coordinate where the wavelet is centered around.
+        Only called when the transform is 1D.
+    normalize: bool
+        When set as `True`, normalization is applied to satisfy the Parseval's equality.
 
     Returns
     -------
@@ -452,6 +473,7 @@ def wvlt_cross_spectrum(
             t0=x0,
             a=a,
             wtype=wtype,
+            tau=tau,
         )
         dawt1 = cwvlt(
             da1,
@@ -460,6 +482,7 @@ def wvlt_cross_spectrum(
             t0=x0,
             a=a,
             wtype=wtype,
+            tau=tau,
         )
     elif len(dim) == 2:
         dawt = cwvlt2(da, s, dim=dim, x0=x0, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
