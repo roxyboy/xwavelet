@@ -12,10 +12,10 @@ import xrft
 
 __all__ = [
     "dwvlt",
-    "cwvlt",
-    "cwvlt2",
-    "wvlt_power_spectrum",
-    "wvlt_cross_spectrum",
+    "cwt",
+    "cwt2",
+    "power_spectrum",
+    "cross_spectrum",
 ]
 
 
@@ -126,18 +126,18 @@ _xo_warning = "Input argument `xo` will be deprecated in the future versions of 
 
 def dwvlt(da, s, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs):
     """
-    Deprecated function. See cwvlt2 doc.
+    Deprecated function. See cwt2 doc.
     """
     msg = (
         "This function has been renamed and will disappear in the future."
-        + " Please use `cwvlt2` instead."
+        + " Please use `cwt2` instead."
     )
     warnings.warn(msg, FutureWarning)
 
-    return cwvlt2(da, s, dim=dim, x0=xo, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
+    return cwt2(da, s, dim=dim, x0=xo, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
 
 
-def cwvlt(
+def cwt(
     da,
     s,
     dim=None,
@@ -217,7 +217,7 @@ def cwvlt(
     return dawt
 
 
-def cwvlt2(da, s, dim=None, x0=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs):
+def cwt2(da, s, dim=None, x0=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs):
     r"""
     Compute continuous two-dimensional wavelet transform of da. Default is the Morlet wavelet.
     Scale :math:`s` is dimensionless.
@@ -281,7 +281,7 @@ def cwvlt2(da, s, dim=None, x0=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs)
     return dawt
 
 
-def wvlt_power_spectrum(
+def power_spectrum(
     da,
     s,
     dim=None,
@@ -339,7 +339,7 @@ def wvlt_power_spectrum(
         warnings.warn(_xo_warning, FutureWarning)
 
     if len(dim) == 1:
-        dawt = cwvlt(
+        dawt = cwt(
             da,
             s,
             dim=dim,
@@ -349,7 +349,7 @@ def wvlt_power_spectrum(
             tau=tau,
         )
     elif len(dim) == 2:
-        dawt = cwvlt2(da, s, dim=dim, x0=x0, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
+        dawt = cwt2(da, s, dim=dim, x0=x0, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
     else:
         raise NotImplementedError(
             "Transformation for three dimensions and higher is not implemented."
@@ -405,7 +405,7 @@ def wvlt_power_spectrum(
         return np.abs(dawt) ** 2 * (dawt[s.dims[0]]) ** -1 * x0**2 / C
 
 
-def wvlt_cross_spectrum(
+def cross_spectrum(
     da,
     da1,
     s,
@@ -466,7 +466,7 @@ def wvlt_cross_spectrum(
         warnings.warn(_xo_warning, FutureWarning)
 
     if len(dim) == 1:
-        dawt = cwvlt(
+        dawt = cwt(
             da,
             s,
             dim=dim,
@@ -475,7 +475,7 @@ def wvlt_cross_spectrum(
             wtype=wtype,
             tau=tau,
         )
-        dawt1 = cwvlt(
+        dawt1 = cwt(
             da1,
             s,
             dim=dim,
@@ -485,10 +485,8 @@ def wvlt_cross_spectrum(
             tau=tau,
         )
     elif len(dim) == 2:
-        dawt = cwvlt2(da, s, dim=dim, x0=x0, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
-        dawt1 = cwvlt2(
-            da1, s, dim=dim, x0=x0, a=a, ntheta=ntheta, wtype=wtype, **kwargs
-        )
+        dawt = cwt2(da, s, dim=dim, x0=x0, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
+        dawt1 = cwt2(da1, s, dim=dim, x0=x0, a=a, ntheta=ntheta, wtype=wtype, **kwargs)
     else:
         raise NotImplementedError(
             "Transformation for three dimensions and higher is not implemented."

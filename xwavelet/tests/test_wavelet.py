@@ -13,10 +13,10 @@ import xarray.testing as xrt
 import xrft
 from xwavelet.wavelet import (
     dwvlt,
-    cwvlt,
-    cwvlt2,
-    wvlt_power_spectrum,
-    wvlt_cross_spectrum,
+    cwt,
+    cwt2,
+    power_spectrum,
+    cross_spectrum,
 )
 
 
@@ -54,13 +54,13 @@ def test_dimensions(sample_da_3d, sample_da_2d, sample_da_1d, x0=1.0):
         coords={"scale": np.linspace(0.1, 1.0, 20)},
     )
     with pytest.raises(ValueError):
-        cwvlt(sample_da_2d, s, t0=(180 * 86400))
+        cwt(sample_da_2d, s, t0=(180 * 86400))
     with pytest.raises(ValueError):
-        cwvlt2(sample_da_1d, s, x0=x0)
+        cwt2(sample_da_1d, s, x0=x0)
     with pytest.raises(NotImplementedError):
-        wvlt_power_spectrum(sample_da_3d, s, x0=x0)
+        power_spectrum(sample_da_3d, s, x0=x0)
     with pytest.raises(NotImplementedError):
-        wvlt_cross_spectrum(sample_da_3d, sample_da_3d, s, x0=x0)
+        cross_spectrum(sample_da_3d, sample_da_3d, s, x0=x0)
 
 
 def test_convergence(sample_da_2d, sample_da_1d, x0=1.0):
@@ -71,13 +71,13 @@ def test_convergence(sample_da_2d, sample_da_1d, x0=1.0):
     )
 
     npt.assert_almost_equal(
-        wvlt_power_spectrum(sample_da_2d, s, x0=x0).values,
-        wvlt_cross_spectrum(sample_da_2d, sample_da_2d, s, x0=x0).values,
+        power_spectrum(sample_da_2d, s, x0=x0).values,
+        cross_spectrum(sample_da_2d, sample_da_2d, s, x0=x0).values,
     )
 
     npt.assert_almost_equal(
-        wvlt_power_spectrum(sample_da_1d, s, x0=(180 * 86400)).values,
-        wvlt_cross_spectrum(sample_da_1d, sample_da_1d, s, x0=(180 * 86400)).values,
+        power_spectrum(sample_da_1d, s, x0=(180 * 86400)).values,
+        cross_spectrum(sample_da_1d, sample_da_1d, s, x0=(180 * 86400)).values,
     )
 
 
@@ -88,11 +88,11 @@ def test_wtype(sample_da_2d, sample_da_1d, x0=1.0):
         coords={"scale": np.linspace(0.1, 1.0, 20)},
     )
     with pytest.raises(NotImplementedError):
-        cwvlt2(sample_da_2d, s, x0=x0, wtype=None)
-        cwvlt2(sample_da_2d, s, x0=x0, wtype="boxcar")
+        cwt2(sample_da_2d, s, x0=x0, wtype=None)
+        cwt2(sample_da_2d, s, x0=x0, wtype="boxcar")
     with pytest.raises(NotImplementedError):
-        cwvlt(sample_da_1d, s, t0=(180 * 86400) ** -1, wtype=None)
-        cwvlt(sample_da_1d, s, t0=(180 * 86400) ** -1, wtype="boxcar")
+        cwt(sample_da_1d, s, t0=(180 * 86400) ** -1, wtype=None)
+        cwt(sample_da_1d, s, t0=(180 * 86400) ** -1, wtype="boxcar")
 
 
 def test_frequency(sample_da_1d, t0=(180 * 86400)):
@@ -112,9 +112,9 @@ def test_frequency(sample_da_1d, t0=(180 * 86400)):
 
     tau = np.datetime64("2005-02-25")
     with pytest.raises(ValueError):
-        cwvlt(sample_da_1d, s, t0=t0, tau=tau)
+        cwt(sample_da_1d, s, t0=t0, tau=tau)
 
-    wda = wvlt_power_spectrum(sample_da_1d, s, x0=t0)
+    wda = power_spectrum(sample_da_1d, s, x0=t0)
 
     npt.assert_equal(
         np.sort(wda.values.argsort()[-3:]),
@@ -248,7 +248,7 @@ def test_isotropic_ps_slope(chunk, N=256, dL=1.0, amp=1e0, slope=-2.0, xo=50):
 
     Wtheta = dwvlt(theta, s, dim=["y", "x"], xo=xo, **kwargs)
     npt.assert_allclose(
-        Wtheta.values, cwvlt2(theta, s, dim=["y", "x"], x0=xo, **kwargs).values
+        Wtheta.values, cwt2(theta, s, dim=["y", "x"], x0=xo, **kwargs).values
     )
 
     iso_ps = (np.abs(Wtheta) ** 2).mean(["d0", "angle"]) * (Wtheta.scale) ** -1
@@ -258,7 +258,7 @@ def test_isotropic_ps_slope(chunk, N=256, dL=1.0, amp=1e0, slope=-2.0, xo=50):
     )
     npt.assert_allclose(a, slope, atol=0.3)
 
-    iso_ps = wvlt_power_spectrum(theta, s, dim=["y", "x"], x0=xo, **kwargs).mean(
+    iso_ps = power_spectrum(theta, s, dim=["y", "x"], x0=xo, **kwargs).mean(
         ["d0", "angle"]
     )
     npt.assert_almost_equal(np.ma.masked_invalid(iso_ps).mask.sum(), 0.0)
