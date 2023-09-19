@@ -14,6 +14,8 @@ __all__ = [
     "dwvlt",
     "cwt",
     "cwt2",
+    "wvlt_power_spectrum",
+    "wvlt_cross_spectrum",
     "power_spectrum",
     "cross_spectrum",
 ]
@@ -279,6 +281,40 @@ def cwt2(da, s, dim=None, x0=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs):
     dawt[sdim] = x0 * s
 
     return dawt
+
+
+def wvlt_power_spectrum(
+    da, s, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs
+):
+    """
+    Deprecated function. See power_spectrum doc.
+    """
+    msg = (
+        "This function has been renamed and will disappear in the future."
+        + " Please use `power_spectrum` instead."
+    )
+    warnings.warn(msg, FutureWarning)
+
+    return power_spectrum(
+        da, s, dim=dim, x0=xo, a=a, ntheta=ntheta, wtype=wtype, **kwargs
+    )
+
+
+def wvlt_cross_spectrum(
+    da, da1, s, dim=None, xo=50e3, a=1.0, ntheta=16, wtype="morlet", **kwargs
+):
+    """
+    Deprecated function. See cross_spectrum doc.
+    """
+    msg = (
+        "This function has been renamed and will disappear in the future."
+        + " Please use `cross_spectrum` instead."
+    )
+    warnings.warn(msg, FutureWarning)
+
+    return cross_spectrum(
+        da, da1, s, dim=dim, x0=xo, a=a, ntheta=ntheta, wtype=wtype, **kwargs
+    )
 
 
 def power_spectrum(
